@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 
 /** Odstín základny z jejího jména, stejný všude v aplikaci. */
@@ -26,7 +27,8 @@ export default function BaseLinks({
         const active = b.id === current;
         const h = hueOf(b.name);
         return (
-          <span key={b.id} className="whitespace-nowrap">
+          <Fragment key={b.id}>
+          <span className="whitespace-nowrap">
             <Link
               href={`${path}?zakladna=${b.id}`}
               aria-current={active ? "page" : undefined}
@@ -42,6 +44,8 @@ export default function BaseLinks({
               </span>
             )}
           </span>
+          {" "}
+          </Fragment>
         );
       })}
     </nav>
