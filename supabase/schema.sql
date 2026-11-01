@@ -318,3 +318,7 @@ create table attendance (
 -- Základny Nová Ves, Smilovice, Skalice; členové jsou na tréninky své základny přihlášeni automaticky
 -- (přihlášky = omluvy a hosté; public.training_counts to počítá); policy guardians_trainer (trenér spravuje vazbu rodič-dítě
 -- u členů své základny). Viz migrace bases_defaults_trainer_scope.
+
+-- Zakládání účtů: public.create_account(...) (admin: jakýkoli účet; trenér: rodič/člen u členů své základny),
+-- počáteční heslo nastavuje funkce, účet musí při prvním přihlášení heslo změnit. Policy profiles_trainer_read,
+-- guardians_trainer. Viz migrace create_account_function.

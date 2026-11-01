@@ -36,5 +36,7 @@ async function Members() {
     members = all.filter((m) => session.trainerBaseIds.includes(m.baseId));
   }
   const editableBaseIds = role === "admin" ? "all" : role === "trainer" ? (session?.trainerBaseIds ?? []) : [];
-  return <MemberTable members={members} bases={bases} editableBaseIds={editableBaseIds} />;
+  // Filtr základen nabízí jen ty, ze kterých jsou zobrazení členové.
+  const visibleBases = role === "admin" ? bases : bases.filter((b) => members.some((m) => m.baseId === b.id) || (role === "trainer" && session?.trainerBaseIds.includes(b.id)));
+  return <MemberTable members={members} bases={visibleBases} editableBaseIds={editableBaseIds} />;
 }

@@ -21,11 +21,11 @@ export function menuFor(role: Role): MenuItem[] {
   const home = { href: "/prehled", label: "Přehled" };
   switch (role) {
     case "admin":
-      return [home, { href: "/clenove", label: "Členové" }, { href: "/dochazka", label: "Tréninky" }];
+      return [home, { href: "/clenove", label: "Členové" }, { href: "/dochazka", label: "Tréninky" }, { href: "/ucty", label: "Účty" }];
     case "moderator":
       return [home];
     case "trainer":
-      return [home, { href: "/clenove", label: "Moje základna" }, { href: "/dochazka", label: "Docházka" }];
+      return [home, { href: "/clenove", label: "Moje základna" }, { href: "/dochazka", label: "Docházka" }, { href: "/ucty", label: "Účty rodičů" }];
     case "parent":
       return [home, { href: "/clenove", label: "Moje děti" }, { href: "/moje-treninky", label: "Přihlášky na tréninky" }];
     case "member":
