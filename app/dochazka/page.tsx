@@ -13,7 +13,7 @@ export default function Page({ searchParams }: PageProps<"/dochazka">) {
     <div>
       <h1 className="text-2xl font-semibold">Docházka</h1>
       <p className="mt-1 text-muted">Tréninky za poslední týden a na týden dopředu.</p>
-      <div className="mt-8">
+      <div className="mt-5">
         <Suspense fallback={<p className="text-muted">Načítám…</p>}>
           <Content searchParams={searchParams} />
         </Suspense>
@@ -32,7 +32,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/dochazka">[
   const baseId = allowed.some((b) => b.id === requested) ? requested! : allowed[0].id;
   const [trainings, trainers] = await Promise.all([getTrainings(-7, 8, [baseId]), getTrainersByEvent(-7, 8)]);
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {allowed.length > 1 && <BaseLinks bases={allowed} current={baseId} path="/dochazka" />}
       {trainings.length === 0 ? (
         <p className="text-muted">Na této základně nejsou v tomto období žádné tréninky.</p>

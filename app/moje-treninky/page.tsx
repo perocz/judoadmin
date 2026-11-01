@@ -15,7 +15,7 @@ export default function Page({ searchParams }: PageProps<"/moje-treninky">) {
       <p className="mt-1 text-muted">
         Na tréninky své základny jsou členové přihlášeni automaticky, stačí je případně omluvit (i zpětně). Na jinou základnu se lze přihlásit jako host do hodiny před tréninkem.
       </p>
-      <div className="mt-8">
+      <div className="mt-5">
         <Suspense fallback={<p className="text-muted">Načítám…</p>}>
           <Content searchParams={searchParams} />
         </Suspense>
@@ -48,7 +48,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/moje-trenin
   }));
   const initial = Object.fromEntries(regs.map((r) => [`${r.eventId}:${r.memberId}`, { status: r.status, late: r.lateExcuse }]));
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <BaseLinks bases={bases} current={baseId} path="/moje-treninky" homeId={people[0].baseId} />
       {views.length === 0 ? (
         <p className="text-muted">Na této základně není v nejbližších 14 dnech žádný trénink.</p>
