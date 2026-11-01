@@ -22,10 +22,11 @@ export type Session = {
 export const getSession = cache(async (): Promise<Session | null> => {
   if (!hasSupabase) return null;
   const sb = await serverClient();
-  const {
-    data: { user },
-  } = await sb.auth.getUser();
-  if (!user) return null;
+  // getClaims ověří podpis přihlašovacího tokenu lokálně (bez dotazu na Supabase Auth), proxy.ts ho podle potřeby obnoví.
+  const { data: auth } = await sb.auth.getClaims();
+  const userId = auth?.claims?.sub;
+  if (!userId) return null;
+  const user = { id: userId };
   const [profile, roles] = await Promise.all([
     sb.from("profiles").select("full_name,username,must_change_password").eq("id", user.id).maybeSingle(),
     sb.from("user_roles").select("role,base_id").eq("profile_id", user.id),
