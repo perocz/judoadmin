@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import BaseLinks from "@/components/BaseLinks";
 import TrainingSignup, { type TrainingView } from "@/components/TrainingSignup";
 import { getBases } from "@/lib/data";
 import { requireSession } from "@/lib/session";
@@ -49,24 +49,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/moje-trenin
   const initial = Object.fromEntries(regs.map((r) => [`${r.eventId}:${r.memberId}`, { status: r.status, late: r.lateExcuse }]));
   return (
     <div className="space-y-6">
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="grid gap-1">
-          <span className="label">Základna</span>
-          <select className="field" name="zakladna" defaultValue={baseId}>
-            {bases.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" className="border border-fg px-4 py-2 text-sm hover:border-accent hover:text-accent">
-          Zobrazit
-        </button>
-        <Link href="/moje-treninky" className="py-2 text-sm text-muted">
-          Moje základna
-        </Link>
-      </form>
+      <BaseLinks bases={bases} current={baseId} path="/moje-treninky" homeId={people[0].baseId} />
       {views.length === 0 ? (
         <p className="text-muted">Na této základně není v nejbližších 14 dnech žádný trénink.</p>
       ) : (

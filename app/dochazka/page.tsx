@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import BaseLinks from "@/components/BaseLinks";
 import { getBases } from "@/lib/data";
 import { requireSession } from "@/lib/session";
 import { fmtDay, fmtTime, getTrainersByEvent, getTrainings, presentTrainers } from "@/lib/trainings";
@@ -32,23 +33,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/dochazka">[
   const [trainings, trainers] = await Promise.all([getTrainings(-7, 8, [baseId]), getTrainersByEvent(-7, 8)]);
   return (
     <div className="space-y-6">
-      {allowed.length > 1 && (
-        <form method="get" className="flex flex-wrap items-end gap-3">
-          <label className="grid gap-1">
-            <span className="label">Základna</span>
-            <select className="field" name="zakladna" defaultValue={baseId}>
-              {allowed.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="submit" className="border border-fg px-4 py-2 text-sm hover:border-accent hover:text-accent">
-            Zobrazit
-          </button>
-        </form>
-      )}
+      {allowed.length > 1 && <BaseLinks bases={allowed} current={baseId} path="/dochazka" />}
       {trainings.length === 0 ? (
         <p className="text-muted">Na této základně nejsou v tomto období žádné tréninky.</p>
       ) : (
