@@ -322,3 +322,6 @@ create table attendance (
 -- Zakládání účtů: public.create_account(...) (admin: jakýkoli účet; trenér: rodič/člen u členů své základny),
 -- počáteční heslo nastavuje funkce, účet musí při prvním přihlášení heslo změnit. Policy profiles_trainer_read,
 -- guardians_trainer. Viz migrace create_account_function.
+
+-- Trenéři na trénincích: user_roles.level (head|regular), trainer_attendance (excused = odhlášen z tréninku své základny,
+-- attending = přihlášený host), public.training_trainers(from,to) pro správce a trenéry. Migrace trainers_on_trainings.

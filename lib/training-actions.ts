@@ -65,3 +65,15 @@ export async function setTrainingStatus(
   revalidatePath("/treninky");
   return { ok: true };
 }
+
+/** Trenér: odhlásí se z tréninku své základny ("excused"), přihlásí se na cizí ("attending"), nebo vrátí výchozí stav (null). */
+export async function setTrainerAttendance(eventId: string, status: "attending" | "excused" | null): Promise<ActionResult> {
+  const session = await getSession();
+  if (!session || session.trainerBaseIds.length === 0) return DENIED;
+  const sb = await serverClient();
+  const { error } =
+    status === null
+      ? await sb.from("trainer_attendance").delete().eq("event_id", eventId).eq("profile_id", session.userId)
+      : await sb.from("trainer_attendance").upsert({ event_id: eventId, profile_id: session.userId, status });
+  return error ? FAILED : { ok: true };
+}

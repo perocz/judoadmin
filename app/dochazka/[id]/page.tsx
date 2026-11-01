@@ -6,7 +6,7 @@ import AttendanceList, { type Row } from "@/components/AttendanceList";
 import { getBases } from "@/lib/data";
 import { requireSession } from "@/lib/session";
 import { serverClient } from "@/lib/supabase-server";
-import { fmtDay, fmtTime } from "@/lib/trainings";
+import { fmtDay, fmtTime, getTrainersByEvent } from "@/lib/trainings";
 
 export const metadata: Metadata = { title: "Docházka tréninku" };
 
@@ -58,6 +58,8 @@ async function Content({ params }: { params: PageProps<"/dochazka/[id]">["params
     rows.set(r.member_id, row);
   }
   const base = (ev.bases as unknown as { name: string }).name;
+  const trainerList = (await getTrainersByEvent(-30, 60)).get(ev.id) ?? [];
+  const KIND = { head: "hlavní", regular: "stálý", guest: "host" } as const;
   return (
     <div>
       <p className="text-sm">
@@ -67,6 +69,20 @@ async function Content({ params }: { params: PageProps<"/dochazka/[id]">["params
         {base}, {fmtDay(ev.starts_at!)} {fmtTime(ev.starts_at!)}–{fmtTime(ev.ends_at!)}
       </h1>
       {ev.description && <p className="mt-1 text-muted">{ev.description}</p>}
+      <section className="mt-6">
+        <h2 className="label mb-2">Trenéři</h2>
+        {trainerList.length === 0 ? (
+          <p className="text-muted">Žádní.</p>
+        ) : (
+          <ul className="space-y-0.5">
+            {trainerList.map((t) => (
+              <li key={t.id} className={t.status === "excused" ? "text-muted line-through" : ""}>
+                {t.name} <span className="text-sm text-muted">· {KIND[t.kind]}{t.status === "excused" ? ", odhlášen" : ""}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
       <div className="mt-8">
         <AttendanceList
           eventId={ev.id}

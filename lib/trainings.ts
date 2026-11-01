@@ -78,3 +78,25 @@ export const fmtDay = (iso: string) =>
   new Intl.DateTimeFormat("cs-CZ", { weekday: "short", day: "numeric", month: "numeric", timeZone: TZ }).format(new Date(iso));
 export const fmtTime = (iso: string) =>
   new Intl.DateTimeFormat("cs-CZ", { hour: "2-digit", minute: "2-digit", timeZone: TZ }).format(new Date(iso));
+
+export type TrainerOnTraining = { id: string; name: string; kind: "head" | "regular" | "guest"; status: "attending" | "excused" };
+
+/** Trenéři jednotlivých tréninků v rozmezí dnů (jména vrací databáze jen správci a trenérům). */
+export async function getTrainersByEvent(fromDays: number, toDays: number): Promise<Map<string, TrainerOnTraining[]>> {
+  const sb = await serverClient();
+  const day = 24 * 3600 * 1000;
+  const { data } = await sb.rpc("training_trainers", {
+    from_ts: new Date(Date.now() + fromDays * day).toISOString(),
+    to_ts: new Date(Date.now() + toDays * day).toISOString(),
+  });
+  const map = new Map<string, TrainerOnTraining[]>();
+  for (const r of (data ?? []) as { event_id: string; profile_id: string; full_name: string; kind: TrainerOnTraining["kind"]; status: TrainerOnTraining["status"] }[]) {
+    map.set(r.event_id, [...(map.get(r.event_id) ?? []), { id: r.profile_id, name: r.full_name, kind: r.kind, status: r.status }]);
+  }
+  return map;
+}
+
+/** Jména trenérů, kteří na trénink přijdou. */
+export function presentTrainers(list: TrainerOnTraining[] | undefined): string {
+  return (list ?? []).filter((t) => t.status === "attending").map((t) => t.name).join(", ");
+}

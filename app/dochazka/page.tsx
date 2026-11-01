@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getBases } from "@/lib/data";
 import { requireSession } from "@/lib/session";
-import { fmtDay, fmtTime, getTrainings } from "@/lib/trainings";
+import { fmtDay, fmtTime, getTrainersByEvent, getTrainings, presentTrainers } from "@/lib/trainings";
 
 export const metadata: Metadata = { title: "Docházka" };
 
@@ -29,7 +29,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/dochazka">[
   const allowed = isAdmin ? bases : bases.filter((b) => session.trainerBaseIds.includes(b.id));
   const requested = typeof sp.zakladna === "string" ? sp.zakladna : undefined;
   const baseId = allowed.some((b) => b.id === requested) ? requested! : allowed[0].id;
-  const trainings = await getTrainings(-7, 8, [baseId]);
+  const [trainings, trainers] = await Promise.all([getTrainings(-7, 8, [baseId]), getTrainersByEvent(-7, 8)]);
   return (
     <div className="space-y-6">
       {allowed.length > 1 && (
@@ -66,6 +66,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/dochazka">[
                 · přihlášeno {t.attending}, omluveno {t.excused}
               </span>
               {t.status !== "planned" && <span className="text-sm text-accent"> · zrušeno</span>}
+              <p className="text-sm text-muted">Trenéři: {presentTrainers(trainers.get(t.id)) || "nikdo"}</p>
             </li>
           ))}
         </ul>

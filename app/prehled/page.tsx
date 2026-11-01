@@ -4,7 +4,7 @@ import Link from "next/link";
 import { getActiveRole } from "@/lib/active-role";
 import { ROLE_LABEL } from "@/lib/roles";
 import { requireSession } from "@/lib/session";
-import { fmtDay, fmtTime, getMyMembers, getMyRegs, getTrainings } from "@/lib/trainings";
+import { fmtDay, fmtTime, getMyMembers, getMyRegs, getTrainersByEvent, getTrainings, presentTrainers } from "@/lib/trainings";
 import { serverClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = { title: "Přehled" };
@@ -77,7 +77,8 @@ async function Family() {
 async function Trainer({ role }: { role: "trainer" | "admin" }) {
   const session = await requireSession();
   const baseIds = role === "admin" ? undefined : session.trainerBaseIds;
-  const trainings = (await getTrainings(0, 3, baseIds)).slice(0, 20);
+  const [all, trainers] = await Promise.all([getTrainings(0, 3, baseIds), getTrainersByEvent(0, 3)]);
+  const trainings = all.slice(0, 20);
   return (
     <section>
       <h2 className="label mb-3">Tréninky v příštích třech dnech</h2>
@@ -98,6 +99,7 @@ async function Trainer({ role }: { role: "trainer" | "admin" }) {
                 · přihlášeno {t.attending}, omluveno {t.excused}
               </span>
               {t.status !== "planned" && <span className="text-sm text-accent"> · zrušeno</span>}
+              <p className="text-sm text-muted">Trenéři: {presentTrainers(trainers.get(t.id)) || "nikdo"}</p>
             </li>
           ))}
         </ul>
