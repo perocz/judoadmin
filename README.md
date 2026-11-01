@@ -10,7 +10,8 @@ Stav: **kostra**. Veřejné stránky běží nad demo daty se smyšlenými jmén
 - Akce: kalendář po měsících, detail akce s počtem přihlášených po základnách (jména se veřejně neukazují)
 - Členové: seznam s hledáním a filtrem základny a kategorie
 - Žebříček: soutěže a aktivita, filtr roku, základny a kategorie
-- Databázové schéma s rolemi a pravidly přístupu: `supabase/schema.sql`
+- Databázové schéma s rolemi a pravidly přístupu: `supabase/schema.sql` (nasazeno v Supabase)
+- Čtení základen, akcí a aktualit ze Supabase; bez nastavených klíčů běží demo data
 - Mobile-first, světlý i tmavý režim, manifest pro instalaci na plochu (PWA)
 
 ## Co zatím chybí
@@ -19,7 +20,11 @@ Stav: **kostra**. Veřejné stránky běží nad demo daty se smyšlenými jmén
 2. Registrace na akce
 3. Zadávání výsledků a bodovací systém (pravidla viz `docs/specifikace.md`, kap. 3.4)
 4. Import skutečných dat ze staré správy
-5. Napojení na Supabase místo demo dat (`lib/data.ts`)
+5. Veřejné počty přihlášených a žebříček z databáze (čeká na přihlášení a rozhodnutí o zveřejňování jmen)
+
+## Nastavení databáze
+
+Zkopíruj `.env.example` do `.env.local` a doplň URL projektu a publishable klíč (Supabase, Project Settings, API). Stejné dvě proměnné nastav i v hostingu. Klíč `service_role` se nikdy nedává do repozitáře ani do chatu.
 
 ## Spuštění
 
