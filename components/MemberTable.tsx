@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { setMembership } from "@/lib/member-actions";
 import type { Base, Member } from "@/lib/types";
-import { CATEGORIES } from "@/lib/types";
+import { CATEGORIES, MEMBERSHIP_LABEL } from "@/lib/types";
 
 const PAGE = 50;
 
@@ -10,7 +11,23 @@ function norm(s: string) {
   return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }
 
-export default function MemberTable({ members, bases }: { members: Member[]; bases: Base[] }) {
+export default function MemberTable({
+  members,
+  bases,
+  editableBaseIds,
+}: {
+  members: Member[];
+  bases: Base[];
+  editableBaseIds: string[] | "all";
+}) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+  const canEdit = (m: Member) => editableBaseIds === "all" || editableBaseIds.includes(m.baseId);
+  const save = (m: Member, membership: Member["membership"], anyTraining: boolean) =>
+    startTransition(async () => {
+      const r = await setMembership(m.id, membership, anyTraining);
+      setError(r.ok ? "" : (r.error ?? "Uložení se nepodařilo."));
+    });
   const [q, setQ] = useState("");
   const [base, setBase] = useState("");
   const [cat, setCat] = useState("");
@@ -89,6 +106,12 @@ export default function MemberTable({ members, bases }: { members: Member[]; bas
         {filtered.length} z {members.length} členů
       </p>
 
+      {error && (
+        <p className="mt-2 text-sm text-accent" role="alert">
+          {error}
+        </p>
+      )}
+
       <div className="mt-2 overflow-x-auto">
         <table className="tbl">
           <thead>
@@ -97,6 +120,7 @@ export default function MemberTable({ members, bases }: { members: Member[]; bas
               <th>Kat.</th>
               <th className="num pr-6">Kyu</th>
               <th className="hidden sm:table-cell">Základna</th>
+              <th>Příspěvek</th>
             </tr>
           </thead>
           <tbody>
@@ -108,11 +132,41 @@ export default function MemberTable({ members, bases }: { members: Member[]; bas
                 <td>{m.category}</td>
                 <td className="num pr-6">{m.kyu}</td>
                 <td className="hidden text-muted sm:table-cell">{baseName.get(m.baseId)}</td>
+                <td className="whitespace-nowrap">
+                  {canEdit(m) ? (
+                    <span className="flex items-center gap-3">
+                      <select
+                        className="field py-1"
+                        aria-label={`Typ příspěvku: ${m.lastName} ${m.firstName}`}
+                        value={m.membership}
+                        disabled={pending}
+                        onChange={(e) => save(m, e.target.value as Member["membership"], m.anyTraining)}
+                      >
+                        <option value="standard">{MEMBERSHIP_LABEL.standard}</option>
+                        <option value="unlimited">{MEMBERSHIP_LABEL.unlimited}</option>
+                      </select>
+                      <label className="flex items-center gap-1 text-xs text-muted">
+                        <input
+                          type="checkbox"
+                          checked={m.anyTraining}
+                          disabled={pending}
+                          onChange={(e) => save(m, m.membership, e.target.checked)}
+                        />
+                        kamkoli
+                      </label>
+                    </span>
+                  ) : (
+                    <span>
+                      {MEMBERSHIP_LABEL[m.membership]}
+                      {m.anyTraining && <span className="text-muted"> · kamkoli</span>}
+                    </span>
+                  )}
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-muted">
+                <td colSpan={5} className="text-muted">
                   Nikdo neodpovídá filtru.
                 </td>
               </tr>

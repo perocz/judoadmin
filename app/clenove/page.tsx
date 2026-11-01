@@ -22,7 +22,8 @@ export default function MembersPage() {
 }
 
 async function Members() {
-  if (!isDemo) await requireSession();
+  const session = isDemo ? null : await requireSession();
   const [members, bases] = await Promise.all([getMembers(), getBases()]);
-  return <MemberTable members={members} bases={bases} />;
+  const editableBaseIds = session?.roles.includes("admin") ? "all" : (session?.trainerBaseIds ?? []);
+  return <MemberTable members={members} bases={bases} editableBaseIds={editableBaseIds} />;
 }

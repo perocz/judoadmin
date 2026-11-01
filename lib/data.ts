@@ -7,7 +7,7 @@ import { cacheLife } from "next/cache";
 import * as demo from "./demo-data";
 import { hasSupabase, publicClient } from "./supabase";
 import { serverClient } from "./supabase-server";
-import { ACTIVITY_TYPES, type Base, type ClubEvent, type Member, type Post, type RankingRow } from "./types";
+import { ACTIVITY_TYPES, type Base, type ClubEvent, type Member, type Membership, type Post, type RankingRow } from "./types";
 
 export const isDemo = !hasSupabase;
 
@@ -53,7 +53,7 @@ export async function getMembers(): Promise<Member[]> {
   const sb = await serverClient();
   const { data, error } = await sb
     .from("members")
-    .select("id,last_name,first_name,birth_year,category,kyu,base_id")
+    .select("id,last_name,first_name,birth_year,category,kyu,base_id,membership,any_training")
     .eq("status", "active")
     .order("last_name")
     .order("first_name");
@@ -61,6 +61,7 @@ export async function getMembers(): Promise<Member[]> {
   return data.map((m) => ({
     id: m.id, lastName: m.last_name, firstName: m.first_name, birthYear: m.birth_year ?? null,
     category: m.category, kyu: Number(m.kyu ?? 6), baseId: m.base_id,
+    membership: m.membership as Membership, anyTraining: m.any_training,
   }));
 }
 
