@@ -52,7 +52,7 @@ async function Content() {
       id: p.id,
       username: p.username ?? "",
       fullName: p.full_name,
-      roles: isAdmin ? (rolesOf.get(p.id) ?? []) : ["parent"],
+      roles: isAdmin ? [...new Set(rolesOf.get(p.id) ?? [])] : ["parent"],
       children: (kids.get(p.id) ?? []).map((id) => byId.get(id)).filter((m): m is NonNullable<typeof m> => !!m),
     }));
   const myBases = isAdmin ? bases : bases.filter((b) => session.trainerBaseIds.includes(b.id));
