@@ -49,15 +49,14 @@ export async function setAbsence(eventId: string, memberId: string, absent: bool
 /** Trenér/admin: změní stav tréninku. */
 export async function setTrainingStatus(
   eventId: string,
-  status: "planned" | "cancelled" | "cancelled_replacement",
-  replacementBaseIds: string[] = [],
+  status: "planned" | "cancelled",
 ): Promise<ActionResult> {
   const session = await getSession();
   if (!session) return DENIED;
   const sb = await serverClient();
   const { data, error } = await sb
     .from("events")
-    .update({ training_status: status, replacement_base_ids: status === "cancelled_replacement" ? replacementBaseIds : [] })
+    .update({ training_status: status })
     .eq("id", eventId)
     .select("id");
   if (error) return FAILED;

@@ -43,7 +43,6 @@ async function Content({ searchParams }: { searchParams: PageProps<"/moje-trenin
     baseName: t.baseName,
     label: t.label,
     status: t.status,
-    replacement: t.replacementBaseIds.map((id) => nameOf.get(id) ?? "").filter(Boolean).join(", "),
     attending: t.attending,
   }));
   const initial = Object.fromEntries(regs.map((r) => [`${r.eventId}:${r.memberId}`, { status: r.status, late: r.lateExcuse }]));

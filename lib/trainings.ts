@@ -9,8 +9,7 @@ export type Training = {
   startsAt: string; // ISO
   endsAt: string;
   label: string | null;
-  status: "planned" | "cancelled" | "cancelled_replacement";
-  replacementBaseIds: string[];
+  status: "planned" | "cancelled";
   attending: number;
   excused: number;
 };
@@ -38,7 +37,7 @@ export async function getTrainings(fromDays: number, toDays: number, baseIds?: s
   const to = new Date(Date.now() + toDays * day);
   let q = sb
     .from("events")
-    .select("id,base_id,starts_at,ends_at,description,training_status,replacement_base_ids,bases(name)")
+    .select("id,base_id,starts_at,ends_at,description,training_status,bases(name)")
     .eq("type", "trenink")
     .gte("starts_at", from.toISOString())
     .lt("starts_at", to.toISOString())
@@ -55,8 +54,7 @@ export async function getTrainings(fromDays: number, toDays: number, baseIds?: s
     startsAt: r.starts_at!,
     endsAt: r.ends_at!,
     label: r.description,
-    status: r.training_status,
-    replacementBaseIds: r.replacement_base_ids,
+    status: r.training_status as "planned" | "cancelled",
     attending: counts.get(r.id)?.attending ?? 0,
     excused: counts.get(r.id)?.excused ?? 0,
   }));

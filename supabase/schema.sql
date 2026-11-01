@@ -331,3 +331,5 @@ create table attendance (
 
 -- Docházka: tabulka attendance přejmenována na absences = jen absence bez omluvy (migrace attendance_to_absences).
 -- Přítomni jsou automaticky všichni členové základny bez omluvy a hosté; trenér zapisuje jen absenci.
+
+-- Stav tréninku je jen planned | cancelled. Hodnota cancelled_replacement a sloupec replacement_base_ids zůstávají v databázi nepoužité.

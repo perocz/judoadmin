@@ -24,7 +24,7 @@ async function Content({ params }: { params: PageProps<"/dochazka/[id]">["params
   const sb = await serverClient();
   const { data: ev } = await sb
     .from("events")
-    .select("id,base_id,starts_at,ends_at,description,training_status,replacement_base_ids,type,bases(name)")
+    .select("id,base_id,starts_at,ends_at,description,training_status,type,bases(name)")
     .eq("id", id)
     .eq("type", "trenink")
     .maybeSingle();
@@ -88,8 +88,6 @@ async function Content({ params }: { params: PageProps<"/dochazka/[id]">["params
           eventId={ev.id}
           rows={[...rows.values()]}
           status={ev.training_status}
-          otherBases={bases.filter((b) => b.id !== ev.base_id)}
-          replacementIds={ev.replacement_base_ids}
         />
       </div>
     </div>

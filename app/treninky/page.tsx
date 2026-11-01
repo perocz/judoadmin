@@ -41,13 +41,6 @@ async function Cancelled() {
               {formatDate(t.day)} {t.startsAt}
             </span>{" "}
             {t.baseName}: zrušeno
-            {t.status === "cancelled_replacement" && (
-              <span className="text-muted">
-                {t.replacementNames.length > 0
-                  ? `, náhrada na základně ${t.replacementNames.join(", ")}`
-                  : ", možná náhrada na jiné základně"}
-              </span>
-            )}
           </li>
         ))}
       </ul>

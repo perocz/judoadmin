@@ -183,7 +183,7 @@ export type TrainingSlot = {
 };
 export type CancelledTraining = {
   id: string; baseName: string; day: string; startsAt: string;
-  status: "cancelled" | "cancelled_replacement"; replacementNames: string[];
+  status: "cancelled";
 };
 
 /** Týdenní rozvrh všech základen (veřejný). */
@@ -215,7 +215,7 @@ export async function getCancelledTrainings(): Promise<CancelledTraining[]> {
   const sb = publicClient();
   const [t, bases] = await Promise.all([
     sb.from("events")
-      .select("id,starts_at,base_id,training_status,replacement_base_ids,bases(name)")
+      .select("id,starts_at,base_id,training_status,bases(name)")
       .eq("type", "trenink")
       .neq("training_status", "planned")
       .gte("starts_at", new Date().toISOString())
@@ -229,7 +229,6 @@ export async function getCancelledTrainings(): Promise<CancelledTraining[]> {
     baseName: (r.bases as unknown as { name: string }).name,
     day: pragueDay(r.starts_at!),
     startsAt: new Date(r.starts_at!).toLocaleTimeString("cs-CZ", { timeZone: "Europe/Prague", hour: "2-digit", minute: "2-digit" }),
-    status: r.training_status as "cancelled" | "cancelled_replacement",
-    replacementNames: (r.replacement_base_ids as string[]).map((id) => names.get(id) ?? "").filter(Boolean),
+    status: "cancelled",
   }));
 }

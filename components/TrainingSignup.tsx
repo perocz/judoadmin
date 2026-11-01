@@ -10,8 +10,7 @@ export type TrainingView = {
   time: string;
   baseName: string;
   label: string | null;
-  status: "planned" | "cancelled" | "cancelled_replacement";
-  replacement: string;
+  status: "planned" | "cancelled";
   attending: number;
 };
 export type PersonView = { id: string; name: string; baseId: string };
@@ -72,7 +71,7 @@ export default function TrainingSignup({
               </p>
               {cancelled ? (
                 <p className="text-sm text-accent">
-                  Zrušeno{t.status === "cancelled_replacement" ? (t.replacement ? `, náhrada: ${t.replacement}` : ", možná náhrada na jiné základně") : ""}
+                  Zrušeno
                 </p>
               ) : (
                 <div className="mt-2 space-y-2">
