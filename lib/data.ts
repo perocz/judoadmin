@@ -72,6 +72,7 @@ export async function getEvents(): Promise<ClubEvent[]> {
     const { data, error } = await publicClient()
       .from("events")
       .select("id,title,type,starts_on,ends_on,venue,city,capacity,description,document_url")
+      .neq("type", "trenink") // tréninky mají vlastní přehled
       .order("starts_on");
     if (error) fail("events", error);
     return (data as EventRow[]).map(toEvent);
