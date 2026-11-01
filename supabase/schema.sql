@@ -302,3 +302,15 @@ end $$;
 -- Členství: novacek | hurikan | neaktivni (původně novacek | aktivni)
 alter type membership_type rename value 'aktivni' to 'hurikan';
 alter type membership_type add value if not exists 'neaktivni';
+
+-- Docházka a přehled tréninků (migrace attendance_and_counts, registration_guard_excuse, trainer_sees_guests)
+create table attendance (
+  event_id uuid not null references events(id) on delete cascade,
+  member_id uuid not null references members(id) on delete cascade,
+  marked_by uuid references profiles(id),
+  created_at timestamptz not null default now(),
+  primary key (event_id, member_id)
+);
+-- + RLS att_admin, att_trainer (private.trains_event), att_own_read; reg_trainer_event; members_trainer_guest
+--   (private.is_guest_of_my_training); public.training_counts(from_ts, to_ts) jen pro přihlášené;
+--   guard_registration: omluva vždy (po uzávěrce s late_excuse), přihlášení/odhlášení do 1 h před tréninkem.

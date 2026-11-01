@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
-import { menuFor, ROLE_LABEL } from "@/lib/roles";
+import { ROLE_LABEL } from "@/lib/roles";
 import { logout } from "@/lib/auth-actions";
 
 /** Menu podle rolí přihlášeného uživatele. Čte relaci, proto se v layoutu vkládá za Suspense. */
@@ -15,16 +15,8 @@ export default async function UserMenu() {
       </li>
     );
   }
-  const items = session.mustChangePassword ? [] : menuFor(session.roles);
   return (
     <>
-      {items.map((i) => (
-        <li key={i.href + i.label}>
-          <Link href={i.href} className="no-underline hover:underline">
-            {i.label}
-          </Link>
-        </li>
-      ))}
       {session.mustChangePassword && (
         <li>
           <Link href="/heslo" className="no-underline hover:underline">

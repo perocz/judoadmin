@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import { isDemo } from "@/lib/data";
 import UserMenu from "@/components/UserMenu";
+import RoleBar from "@/components/RoleBar";
 
 export const metadata: Metadata = {
   title: { default: "Judo Beskydy – správa klubu", template: "%s · Judo Beskydy" },
@@ -65,6 +66,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </nav>
           </div>
         </header>
+        {!isDemo && (
+          <Suspense fallback={null}>
+            <RoleBar />
+          </Suspense>
+        )}
         <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>
         <footer className="border-t border-line">
           <div className="mx-auto max-w-4xl px-4 py-5 text-xs text-muted">

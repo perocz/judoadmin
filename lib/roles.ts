@@ -8,20 +8,27 @@ export const ROLE_LABEL: Record<Role, string> = {
   member: "Člen",
 };
 
+/** Pořadí v přepínači a výchozí role (první, kterou uživatel má). */
+export const ROLE_ORDER: Role[] = ["admin", "moderator", "trainer", "parent", "member"];
+
 export type MenuItem = { href: string; label: string };
 
 /**
- * Menu podle rolí. Odkazuje jen na stránky, které existují.
+ * Podmenu zvolené role. Odkazuje jen na stránky, které existují.
  * Další položky (správa akcí a aktualit, články základny, výsledky) přibudou s příslušnými stránkami.
  */
-export function menuFor(roles: Role[]): MenuItem[] {
-  const items: MenuItem[] = [];
-  const add = (item: MenuItem) => {
-    if (!items.some((i) => i.href === item.href)) items.push(item);
-  };
-  if (roles.includes("admin")) add({ href: "/clenove", label: "Členové" });
-  if (roles.includes("trainer")) add({ href: "/clenove", label: "Moje základna" });
-  if (roles.includes("parent")) add({ href: "/clenove", label: "Moje děti" });
-  if (roles.includes("member")) add({ href: "/clenove", label: "Můj profil" });
-  return items;
+export function menuFor(role: Role): MenuItem[] {
+  const home = { href: "/prehled", label: "Přehled" };
+  switch (role) {
+    case "admin":
+      return [home, { href: "/clenove", label: "Členové" }, { href: "/dochazka", label: "Tréninky" }];
+    case "moderator":
+      return [home];
+    case "trainer":
+      return [home, { href: "/clenove", label: "Moje základna" }, { href: "/dochazka", label: "Docházka" }];
+    case "parent":
+      return [home, { href: "/clenove", label: "Moje děti" }, { href: "/moje-treninky", label: "Přihlášky na tréninky" }];
+    case "member":
+      return [home, { href: "/clenove", label: "Můj profil" }, { href: "/moje-treninky", label: "Přihlášky na tréninky" }];
+  }
 }

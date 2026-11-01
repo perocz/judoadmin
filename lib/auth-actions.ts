@@ -18,7 +18,7 @@ export async function login(_prev: FormState, form: FormData): Promise<FormState
   if (error) return { error: "Neplatné uživatelské jméno nebo heslo." };
 
   const session = await getSession();
-  redirect(session?.mustChangePassword ? "/heslo" : "/");
+  redirect(session?.mustChangePassword ? "/heslo" : "/prehled");
 }
 
 export async function changePassword(_prev: FormState, form: FormData): Promise<FormState> {
@@ -40,7 +40,7 @@ export async function changePassword(_prev: FormState, form: FormData): Promise<
   if (error) return { error: "Heslo se nepodařilo změnit. Zkus jiné, delší heslo." };
   const { error: flagError } = await sb.from("profiles").update({ must_change_password: false }).eq("id", session.userId);
   if (flagError) return { error: "Heslo je změněné, ale přihlášení se nepodařilo dokončit. Přihlas se znovu." };
-  redirect("/");
+  redirect("/prehled");
 }
 
 export async function logout() {
