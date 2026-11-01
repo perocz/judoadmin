@@ -314,3 +314,7 @@ create table attendance (
 -- + RLS att_admin, att_trainer (private.trains_event), att_own_read; reg_trainer_event; members_trainer_guest
 --   (private.is_guest_of_my_training); public.training_counts(from_ts, to_ts) jen pro přihlášené;
 --   guard_registration: omluva vždy (po uzávěrce s late_excuse), přihlášení/odhlášení do 1 h před tréninkem.
+
+-- Základny Nová Ves, Smilovice, Skalice; členové jsou na tréninky své základny přihlášeni automaticky
+-- (přihlášky = omluvy a hosté; public.training_counts to počítá); policy guardians_trainer (trenér spravuje vazbu rodič-dítě
+-- u členů své základny). Viz migrace bases_defaults_trainer_scope.

@@ -5,6 +5,7 @@ import { setRegistration } from "@/lib/training-actions";
 
 export type TrainingView = {
   id: string;
+  baseId: string;
   when: string;
   time: string;
   baseName: string;
@@ -13,7 +14,7 @@ export type TrainingView = {
   replacement: string;
   attending: number;
 };
-export type PersonView = { id: string; name: string };
+export type PersonView = { id: string; name: string; baseId: string };
 type St = "attending" | "excused" | null;
 
 export default function TrainingSignup({
@@ -77,16 +78,23 @@ export default function TrainingSignup({
                 <div className="mt-2 space-y-2">
                   {people.map((p) => {
                     const st = state[`${t.id}:${p.id}`] ?? null;
+                    const home = p.baseId === t.baseId;
                     return (
                       <div key={p.id} className="flex flex-wrap items-center gap-2">
                         <span className="w-40 text-sm">{p.name}</span>
-                        <button type="button" className={btn(st === "attending")} onClick={() => set(t.id, p.id, st === "attending" ? null : "attending")}>
-                          Přijdu
-                        </button>
-                        <button type="button" className={btn(st === "excused")} onClick={() => set(t.id, p.id, st === "excused" ? null : "excused")}>
-                          Omluvit
-                        </button>
-                        {st === "excused" && late[`${t.id}:${p.id}`] && <span className="text-xs text-muted">omluveno zpětně</span>}
+                        {home ? (
+                          <>
+                            <span className="text-sm text-muted">{st === "excused" ? "omluven" : "přihlášen"}</span>
+                            <button type="button" className={btn(st === "excused")} onClick={() => set(t.id, p.id, st === "excused" ? null : "excused")}>
+                              {st === "excused" ? "Zrušit omluvu" : "Omluvit"}
+                            </button>
+                            {st === "excused" && late[`${t.id}:${p.id}`] && <span className="text-xs text-muted">omluveno zpětně</span>}
+                          </>
+                        ) : (
+                          <button type="button" className={btn(st === "attending")} onClick={() => set(t.id, p.id, st === "attending" ? null : "attending")}>
+                            {st === "attending" ? "Přijde jako host" : "Přijít jako host"}
+                          </button>
+                        )}
                       </div>
                     );
                   })}

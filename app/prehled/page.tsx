@@ -37,32 +37,38 @@ async function Family() {
   const session = await requireSession();
   const people = await getMyMembers(session);
   if (people.length === 0) return <p className="text-muted">K tvému účtu zatím není přiřazen žádný člen ani dítě.</p>;
-  const trainings = await getTrainings(0, 7, [...new Set(people.map((p) => p.baseId))]);
+  const trainings = await getTrainings(0, 7, undefined);
   const regs = await getMyRegs(people.map((p) => p.id), trainings.map((t) => t.id));
-  const mine = trainings.filter((t) => regs.some((r) => r.eventId === t.id && r.status === "attending"));
+  const rows = trainings
+    .map((t) => ({
+      t,
+      names: people
+        .filter((p) => {
+          const r = regs.find((x) => x.eventId === t.id && x.memberId === p.id);
+          return p.baseId === t.baseId ? r?.status !== "excused" : r?.status === "attending";
+        })
+        .map((p) => p.name),
+    }))
+    .filter((x) => x.names.length > 0 && x.t.status === "planned");
   return (
     <section>
-      <h2 className="label mb-3">Přihlášené tréninky na 7 dní</h2>
-      {mine.length === 0 ? (
-        <p className="text-muted">Zatím nikdo není přihlášený.</p>
+      <h2 className="label mb-3">Tréninky na 7 dní</h2>
+      {rows.length === 0 ? (
+        <p className="text-muted">Žádné nadcházející tréninky.</p>
       ) : (
         <ul className="divide-y divide-line border-y border-line">
-          {mine.map((t) => (
+          {rows.map(({ t, names }) => (
             <li key={t.id} className="py-3">
               <span className="font-mono text-sm">
                 {fmtDay(t.startsAt)} {fmtTime(t.startsAt)}
               </span>{" "}
-              {t.baseName}:{" "}
-              {regs
-                .filter((r) => r.eventId === t.id && r.status === "attending")
-                .map((r) => people.find((p) => p.id === r.memberId)?.name)
-                .join(", ")}
+              {t.baseName}: {names.join(", ")}
             </li>
           ))}
         </ul>
       )}
       <p className="mt-4 text-sm">
-        <Link href="/moje-treninky">Přihlásit nebo omluvit →</Link>
+        <Link href="/moje-treninky">Omluvit nebo přihlásit hosta →</Link>
       </p>
     </section>
   );

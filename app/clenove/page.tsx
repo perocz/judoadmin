@@ -2,7 +2,9 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import MemberTable from "@/components/MemberTable";
 import { getBases, getMembers, isDemo } from "@/lib/data";
+import { getActiveRole } from "@/lib/active-role";
 import { requireSession } from "@/lib/session";
+import { getMyMembers } from "@/lib/trainings";
 
 export const metadata: Metadata = { title: "Členové" };
 
@@ -23,7 +25,16 @@ export default function MembersPage() {
 
 async function Members() {
   const session = isDemo ? null : await requireSession();
-  const [members, bases] = await Promise.all([getMembers(), getBases()]);
-  const editableBaseIds = session?.roles.includes("admin") ? "all" : (session?.trainerBaseIds ?? []);
+  const [all, bases] = await Promise.all([getMembers(), getBases()]);
+  // Co člen seznamu uvidí, určuje zvolená role (databáze ukazuje vše, co uživatel smí).
+  const role = session ? await getActiveRole(session) : "admin";
+  let members = all;
+  if (session && (role === "parent" || role === "member")) {
+    const mine = new Set((await getMyMembers(session)).map((m) => m.id));
+    members = all.filter((m) => mine.has(m.id));
+  } else if (session && role === "trainer") {
+    members = all.filter((m) => session.trainerBaseIds.includes(m.baseId));
+  }
+  const editableBaseIds = role === "admin" ? "all" : role === "trainer" ? (session?.trainerBaseIds ?? []) : [];
   return <MemberTable members={members} bases={bases} editableBaseIds={editableBaseIds} />;
 }
