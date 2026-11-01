@@ -11,25 +11,21 @@ export default function Leaderboard({ rows, bases }: { rows: RankingRow[]; bases
   const [cat, setCat] = useState("");
   const [mode, setMode] = useState<"soutez" | "aktivita">("soutez");
 
-  const ranked = useMemo(() => {
-    const list = rows.filter((r) => String(r.year) === year && (!base || r.baseId === base) && (!cat || r.category === cat));
+  const display = useMemo(() => {
     const score = (r: RankingRow) => (mode === "soutez" ? r.points : r.activityPoints);
-    return list
+    const sorted = rows
+      .filter((r) => String(r.year) === year && (!base || r.baseId === base) && (!cat || r.category === cat))
       .filter((r) => score(r) > 0)
-      .sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name, "cs"))
-      .map((r, i, arr) => {
-        // Stejný počet bodů = stejné pořadí.
-        const place = i > 0 && score(arr[i - 1]) === score(r) ? -1 : i + 1;
-        return { ...r, place };
-      });
-  }, [rows, year, base, cat, mode]);
+      .sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name, "cs"));
 
-  // Doplníme sdílená pořadí.
-  let lastPlace = 0;
-  const display = ranked.map((r) => {
-    if (r.place !== -1) lastPlace = r.place;
-    return { ...r, place: lastPlace };
-  });
+    // Stejný počet bodů znamená stejné pořadí, další pořadí se přeskočí (1., 2., 2., 4.).
+    const out: (RankingRow & { place: number })[] = [];
+    sorted.forEach((r, i) => {
+      const tied = i > 0 && score(sorted[i - 1]) === score(r);
+      out.push({ ...r, place: tied ? out[i - 1].place : i + 1 });
+    });
+    return out;
+  }, [rows, year, base, cat, mode]);
 
   return (
     <div>
