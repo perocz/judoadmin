@@ -69,7 +69,7 @@ export async function setTrainingStatus(
 /** Trenér: odhlásí se z tréninku své základny ("excused"), přihlásí se na cizí ("attending"), nebo vrátí výchozí stav (null). */
 export async function setTrainerAttendance(eventId: string, status: "attending" | "excused" | null): Promise<ActionResult> {
   const session = await getSession();
-  if (!session || session.trainerBaseIds.length === 0) return DENIED;
+  if (!session || !session.isTrainer) return DENIED;
   const sb = await serverClient();
   const { error } =
     status === null

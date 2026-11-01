@@ -12,6 +12,8 @@ export type Session = {
   fullName: string;
   mustChangePassword: boolean;
   roles: Role[];
+  /** Má roli trenéra (i bez základny = trenér bez příznaku). */
+  isTrainer: boolean;
   /** Základny, které uživatel trénuje. */
   trainerBaseIds: string[];
 };
@@ -36,6 +38,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
     fullName: profile.data.full_name,
     mustChangePassword: profile.data.must_change_password,
     roles: [...new Set(rows.map((r) => r.role as Role))],
+    isTrainer: rows.some((r) => r.role === "trainer"),
     trainerBaseIds: rows.filter((r) => r.role === "trainer" && r.base_id).map((r) => r.base_id as string),
   };
 });

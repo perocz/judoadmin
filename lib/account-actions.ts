@@ -14,6 +14,7 @@ export async function createAccount(input: {
   lastName: string;
   role: Role;
   baseId?: string;
+  level?: "head" | "regular";
   memberId?: string;
   childIds?: string[];
 }): Promise<CreateResult> {
@@ -36,6 +37,7 @@ export async function createAccount(input: {
       p_base: input.baseId ?? null,
       p_member: input.memberId ?? null,
       p_children: input.childIds ?? [],
+      p_level: input.level ?? "head",
     });
     if (!error) return { ok: true, username, id: data as string };
     if (!/už existuje/.test(error.message)) {

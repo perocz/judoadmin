@@ -1,69 +1,84 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import TrainerSignup, { type TrainerTrainingView } from "@/components/TrainerSignup";
-import { getBases } from "@/lib/data";
+import TrainerBoard, { type BoardDay, type BoardTraining } from "@/components/TrainerBoard";
 import { requireSession } from "@/lib/session";
 import { serverClient } from "@/lib/supabase-server";
-import { fmtDay, fmtTime, getTrainersByEvent, getTrainings, presentTrainers } from "@/lib/trainings";
+import { fmtTime, getTrainersByEvent, getTrainings } from "@/lib/trainings";
 
-export const metadata: Metadata = { title: "Moje tréninky" };
+export const metadata: Metadata = { title: "Tréninky" };
 
-export default function Page({ searchParams }: PageProps<"/trener-treninky">) {
+const TZ = "Europe/Prague";
+
+function hueOf(name: string) {
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return h;
+}
+
+export default function Page() {
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Moje tréninky</h1>
+      <h1 className="text-2xl font-semibold">Tréninky</h1>
       <p className="mt-1 text-muted">
-        Jsi automaticky na všech trénincích své základny a můžeš se odhlásit. Na trénink jiné základny se můžeš přihlásit jako trenér.
+        Hlavní a stálí trenéři jsou automaticky na všech trénincích svých základen a mohou se odhlásit. Na ostatní tréninky se zapíšeš přepínačem.
       </p>
       <div className="mt-8">
         <Suspense fallback={<p className="text-muted">Načítám…</p>}>
-          <Content searchParams={searchParams} />
+          <Content />
         </Suspense>
       </div>
     </div>
   );
 }
 
-async function Content({ searchParams }: { searchParams: PageProps<"/trener-treninky">["searchParams"] }) {
+async function Content() {
   const session = await requireSession();
-  if (session.trainerBaseIds.length === 0) return <p className="text-muted">Tato stránka je pro trenéry.</p>;
-  const [bases, sp] = await Promise.all([getBases(), searchParams]);
-  const requested = typeof sp.zakladna === "string" ? sp.zakladna : undefined;
-  const baseId = bases.some((b) => b.id === requested) ? requested! : session.trainerBaseIds[0];
-  const [trainings, trainers, mine] = await Promise.all([getTrainings(0, 14, [baseId]), getTrainersByEvent(0, 14), (async () => {
-    const sb = await serverClient();
-    const { data } = await sb.from("trainer_attendance").select("event_id,status").eq("profile_id", session.userId);
-    return new Map((data ?? []).map((r) => [r.event_id, r.status as "attending" | "excused"]));
-  })()]);
-  const views: TrainerTrainingView[] = trainings.map((t) => ({
-    id: t.id,
-    when: fmtDay(t.startsAt),
-    time: `${fmtTime(t.startsAt)}–${fmtTime(t.endsAt)}`,
-    baseName: t.baseName,
-    label: t.label,
-    home: session.trainerBaseIds.includes(t.baseId),
-    cancelled: t.status !== "planned",
-    mine: mine.get(t.id) ?? null,
-    others: presentTrainers(trainers.get(t.id)?.filter((x) => x.id !== session.userId)),
-  }));
-  return (
-    <div className="space-y-6">
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <label className="grid gap-1">
-          <span className="label">Základna</span>
-          <select className="field" name="zakladna" defaultValue={baseId}>
-            {bases.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit" className="border border-fg px-4 py-2 text-sm hover:border-accent hover:text-accent">
-          Zobrazit
-        </button>
-      </form>
-      {views.length === 0 ? <p className="text-muted">Na této základně není v nejbližších 14 dnech žádný trénink.</p> : <TrainerSignup trainings={views} />}
-    </div>
-  );
+  if (!session.isTrainer) return <p className="text-muted">Tato stránka je pro trenéry.</p>;
+
+  const [trainings, trainers, mine] = await Promise.all([
+    getTrainings(0, 21),
+    getTrainersByEvent(0, 21),
+    (async () => {
+      const sb = await serverClient();
+      const { data } = await sb.from("trainer_attendance").select("event_id,status").eq("profile_id", session.userId);
+      return new Map((data ?? []).map((r) => [r.event_id, r.status as "attending" | "excused"]));
+    })(),
+  ]);
+  const dayKey = (iso: string) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: TZ });
+
+  const items: BoardTraining[] = trainings.map((t) => {
+    const who = trainers.get(t.id) ?? [];
+    const me = who.find((w) => w.id === session.userId && w.kind !== "guest");
+    return {
+      id: t.id,
+      dayKey: dayKey(t.startsAt),
+      time: `${fmtTime(t.startsAt)}–${fmtTime(t.endsAt)}`,
+      baseName: t.baseName,
+      color: hueOf(t.baseName),
+      label: t.label,
+      cancelled: t.status !== "planned",
+      home: session.trainerBaseIds.includes(t.baseId),
+      myKind: me ? (me.kind as "head" | "regular") : "guest",
+      mine: mine.get(t.id) ?? null,
+      who,
+    };
+  });
+
+  // Kalendář: tři týdny od pondělí aktuálního týdne
+  const today = new Date();
+  const todayKey = dayKey(today.toISOString());
+  const dow = (new Date(`${todayKey}T12:00:00Z`).getUTCDay() + 6) % 7; // 0 = pondělí
+  const days: BoardDay[] = [];
+  for (let i = 0; i < 21; i++) {
+    const d = new Date(`${todayKey}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - dow + i);
+    const key = d.toISOString().slice(0, 10);
+    days.push({
+      key,
+      label: `${d.getUTCDate()}. ${d.getUTCMonth() + 1}.`,
+      weekdayLabel: new Intl.DateTimeFormat("cs-CZ", { weekday: "short", timeZone: "UTC" }).format(d),
+      today: key === todayKey,
+    });
+  }
+  return <TrainerBoard trainings={items} days={days} myId={session.userId} myName={session.fullName} />;
 }

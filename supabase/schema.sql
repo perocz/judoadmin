@@ -325,3 +325,6 @@ create table attendance (
 
 -- Trenéři na trénincích: user_roles.level (head|regular), trainer_attendance (excused = odhlášen z tréninku své základny,
 -- attending = přihlášený host), public.training_trainers(from,to) pro správce a trenéry. Migrace trainers_on_trainings.
+
+-- create_account má parametr p_level (hlavní | stálý trenér); trenér bez základny (base_id null) = trenér bez příznaku.
+-- Migrace create_account_trainer_level.

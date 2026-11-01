@@ -28,6 +28,7 @@ export default function AccountManager({
   const [last, setLast] = useState("");
   const [kind, setKind] = useState<Kind>("parent");
   const [baseId, setBaseId] = useState(bases[0]?.id ?? "");
+  const [level, setLevel] = useState<"head" | "regular">("head");
   const [children, setChildren] = useState<PickMember[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -45,7 +46,8 @@ export default function AccountManager({
       firstName: first,
       lastName: last,
       role: kind,
-      baseId: kind === "trainer" ? baseId : undefined,
+      baseId: kind === "trainer" && baseId ? baseId : undefined,
+      level,
       memberId: kind === "member" ? children[0]?.id : undefined,
       childIds: kind === "parent" ? children.map((c) => c.id) : [],
     });
@@ -113,9 +115,11 @@ export default function AccountManager({
             </select>
           </label>
           {kind === "trainer" && (
+            <>
             <label className="grid gap-1">
               <span className="label">Základna</span>
               <select className="field" value={baseId} onChange={(e) => setBaseId(e.target.value)}>
+                <option value="">Bez základny (trenér bez příznaku)</option>
                 {bases.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
@@ -123,6 +127,16 @@ export default function AccountManager({
                 ))}
               </select>
             </label>
+            {baseId && (
+              <label className="grid gap-1">
+                <span className="label">Postavení na základně</span>
+                <select className="field" value={level} onChange={(e) => setLevel(e.target.value as "head" | "regular")}>
+                  <option value="head">Hlavní trenér</option>
+                  <option value="regular">Stálý trenér</option>
+                </select>
+              </label>
+            )}
+            </>
           )}
           {needsMembers && (
             <div className="grid gap-2">
