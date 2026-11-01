@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import Leaderboard from "@/components/Leaderboard";
 import { getBases, getRankingRows } from "@/lib/data";
@@ -20,6 +21,7 @@ export default function RankingPage() {
 }
 
 async function Ranking() {
+  await connection();
   const [rows, bases] = await Promise.all([getRankingRows(), getBases()]);
   return <Leaderboard rows={rows} bases={bases} />;
 }

@@ -62,6 +62,7 @@ async function Upcoming() {
 }
 
 async function News() {
+  await connection();
   const posts = (await getPosts()).slice(0, 5);
   return (
     <ul className="divide-y divide-line border-y border-line">

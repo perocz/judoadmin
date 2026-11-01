@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getEvents } from "@/lib/data";
@@ -22,6 +23,7 @@ export default function EventsPage() {
 }
 
 async function EventList() {
+  await connection();
   const events = await getEvents();
   const byMonth = new Map<string, ClubEvent[]>();
   for (const e of events) {

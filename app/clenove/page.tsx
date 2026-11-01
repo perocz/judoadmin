@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import MemberTable from "@/components/MemberTable";
 import { getBases, getMembers } from "@/lib/data";
@@ -21,6 +22,7 @@ export default function MembersPage() {
 }
 
 async function Members() {
+  await connection();
   const [members, bases] = await Promise.all([getMembers(), getBases()]);
   return <MemberTable members={members} bases={bases} />;
 }

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -22,6 +23,7 @@ export default function EventPage(props: PageProps<"/akce/[id]">) {
 }
 
 async function EventDetail({ params }: { params: Promise<{ id: string }> }) {
+  await connection();
   const { id } = await params;
   const event = await getEvent(id);
   if (!event) notFound();
