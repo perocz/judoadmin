@@ -176,3 +176,60 @@ export async function getRankingRows(): Promise<RankingRow[]> {
   }
   return [...acc.values()];
 }
+
+export type TrainingSlot = {
+  id: string; baseId: string; baseName: string; venue: string | null; address: string | null;
+  weekday: number; startsAt: string; endsAt: string; label: string | null;
+};
+export type CancelledTraining = {
+  id: string; baseName: string; day: string; startsAt: string;
+  status: "cancelled" | "cancelled_replacement"; replacementNames: string[];
+};
+
+/** Týdenní rozvrh všech základen (veřejný). */
+export async function getSchedule(): Promise<TrainingSlot[]> {
+  "use cache";
+  cacheLife("minutes");
+  if (isDemo) return [];
+  const { data, error } = await publicClient()
+    .from("training_slots")
+    .select("id,base_id,weekday,starts_at,ends_at,label,bases(name,venue,address)")
+    .eq("active", true)
+    .order("weekday")
+    .order("starts_at");
+  if (error) fail("training_slots", error);
+  return data.map((r) => {
+    const b = r.bases as unknown as { name: string; venue: string | null; address: string | null };
+    return {
+      id: r.id, baseId: r.base_id, baseName: b.name, venue: b.venue, address: b.address,
+      weekday: r.weekday, startsAt: r.starts_at.slice(0, 5), endsAt: r.ends_at.slice(0, 5), label: r.label,
+    };
+  });
+}
+
+/** Nadcházející zrušené tréninky (veřejné, bez jmen). */
+export async function getCancelledTrainings(): Promise<CancelledTraining[]> {
+  "use cache";
+  cacheLife("minutes");
+  if (isDemo) return [];
+  const sb = publicClient();
+  const [t, bases] = await Promise.all([
+    sb.from("events")
+      .select("id,starts_at,base_id,training_status,replacement_base_ids,bases(name)")
+      .eq("type", "trenink")
+      .neq("training_status", "planned")
+      .gte("starts_at", new Date().toISOString())
+      .order("starts_at"),
+    sb.from("bases").select("id,name"),
+  ]);
+  if (t.error) fail("cancelled trainings", t.error);
+  const names = new Map((bases.data ?? []).map((b) => [b.id, b.name]));
+  return t.data.map((r) => ({
+    id: r.id,
+    baseName: (r.bases as unknown as { name: string }).name,
+    day: pragueDay(r.starts_at!),
+    startsAt: new Date(r.starts_at!).toLocaleTimeString("cs-CZ", { timeZone: "Europe/Prague", hour: "2-digit", minute: "2-digit" }),
+    status: r.training_status as "cancelled" | "cancelled_replacement",
+    replacementNames: (r.replacement_base_ids as string[]).map((id) => names.get(id) ?? "").filter(Boolean),
+  }));
+}

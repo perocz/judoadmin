@@ -22,6 +22,7 @@ export const viewport: Viewport = {
 const nav = [
   { href: "/", label: "Přehled" },
   { href: "/akce", label: "Akce" },
+  { href: "/treninky", label: "Tréninky" },
   { href: "/zebricek", label: "Žebříček" },
 ];
 

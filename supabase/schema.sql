@@ -263,3 +263,24 @@ end $$;
 
 create trigger guard_member_update before update on members
   for each row execute function private.guard_member_update();
+
+-- ============ Tréninky (rozvrh jako akce typu 'trenink') ============
+-- (aplikováno migracemi trainings_enum a trainings_schedule; generování každé pondělí v 3:00 přes pg_cron)
+alter type event_type add value if not exists 'trenink';
+create type training_status as enum ('planned','cancelled','cancelled_replacement');
+create type registration_status as enum ('attending','excused');
+alter table bases add column venue text, add column address text;
+create table training_slots (
+  id uuid primary key default gen_random_uuid(),
+  base_id uuid not null references bases(id) on delete cascade,
+  weekday int not null check (weekday between 1 and 7),
+  starts_at time not null,
+  ends_at time not null check (ends_at > starts_at),
+  label text,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+-- + sloupce events (base_id, slot_id, starts_at, ends_at, training_status, replacement_base_ids),
+--   registrations (status, late_excuse), funkce private.generate_trainings(weeks),
+--   trigger private.guard_registration (uzávěrka: trénink 1 h, ostatní akce 1 den), policies slots_* a events_trainer.
+--   Přesné znění je v migraci trainings_schedule.
