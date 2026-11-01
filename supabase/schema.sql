@@ -239,3 +239,27 @@ create trigger profiles_guard before update on profiles
 
 create policy profiles_self_update on profiles for update
   using (id = auth.uid()) with check (id = auth.uid());
+
+-- Typ členského příspěvku a příznak "smí na jakýkoli trénink"
+create type membership_type as enum ('unlimited','standard');
+alter table members
+  add column membership membership_type not null default 'standard',
+  add column any_training boolean not null default false;
+
+create policy members_trainer_update on members for update
+  using (private.trains_base(base_id))
+  with check (private.trains_base(base_id));
+
+create or replace function private.guard_member_update() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if auth.uid() is not null and not private.has_role('admin')
+     and (to_jsonb(new) - 'membership' - 'any_training')
+         is distinct from (to_jsonb(old) - 'membership' - 'any_training') then
+    raise exception 'Trenér smí měnit jen typ příspěvku a příznaky';
+  end if;
+  return new;
+end $$;
+
+create trigger guard_member_update before update on members
+  for each row execute function private.guard_member_update();
