@@ -23,6 +23,11 @@ function toEvent(r: EventRow): ClubEvent {
   };
 }
 
+/** Okamžik z databáze převede na kalendářní den (YYYY-MM-DD) v pražském čase. */
+function pragueDay(ts: string): string {
+  return new Date(ts).toLocaleDateString("sv-SE", { timeZone: "Europe/Prague" });
+}
+
 function fail(what: string, error: { message: string }): never {
   throw new Error(`Supabase (${what}): ${error.message}`);
 }
@@ -96,7 +101,7 @@ export async function getPosts(): Promise<Post[]> {
       .order("published_at", { ascending: false });
     if (error) fail("posts", error);
     return data.map((p) => ({
-      id: p.id, title: p.title, excerpt: p.excerpt, publishedAt: p.published_at as string,
+      id: p.id, title: p.title, excerpt: p.excerpt, publishedAt: pragueDay(p.published_at as string),
       attachmentUrl: p.attachment_url ?? undefined,
     }));
   }
