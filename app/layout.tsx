@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import "./globals.css";
 import { isDemo } from "@/lib/data";
+import UserMenu from "@/components/UserMenu";
 
 export const metadata: Metadata = {
   title: { default: "Judo Beskydy – správa klubu", template: "%s · Judo Beskydy" },
@@ -20,7 +22,6 @@ export const viewport: Viewport = {
 const nav = [
   { href: "/", label: "Přehled" },
   { href: "/akce", label: "Akce" },
-  { href: "/clenove", label: "Členové" },
   { href: "/zebricek", label: "Žebříček" },
 ];
 
@@ -48,6 +49,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                     </Link>
                   </li>
                 ))}
+                {isDemo ? (
+                  <li>
+                    <Link href="/clenove" className="no-underline hover:underline">
+                      Členové
+                    </Link>
+                  </li>
+                ) : (
+                  <Suspense fallback={null}>
+                    <UserMenu />
+                  </Suspense>
+                )}
               </ul>
             </nav>
           </div>

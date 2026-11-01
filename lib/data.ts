@@ -6,6 +6,7 @@
 import { cacheLife } from "next/cache";
 import * as demo from "./demo-data";
 import { hasSupabase, publicClient } from "./supabase";
+import { serverClient } from "./supabase-server";
 import { ACTIVITY_TYPES, type Base, type ClubEvent, type Member, type Post, type RankingRow } from "./types";
 
 export const isDemo = !hasSupabase;
@@ -43,23 +44,24 @@ export async function getBases(): Promise<Base[]> {
   return demo.bases;
 }
 
+/**
+ * Členové viditelní přihlášenému uživateli. Bez cache: výsledek závisí na uživateli
+ * a o rozsahu (základna trenéra, děti rodiče) rozhodují pravidla RLS v databázi.
+ */
 export async function getMembers(): Promise<Member[]> {
-  "use cache";
-  cacheLife("minutes");
-  if (!isDemo) {
-    // Členy vidí jen přihlášený admin, trenér nebo rodič; anonymovi vrátí databáze prázdný seznam.
-    const { data, error } = await publicClient()
-      .from("members")
-      .select("id,last_name,first_name,birth_year,category,kyu,base_id")
-      .eq("status", "active")
-      .order("last_name");
-    if (error) fail("members", error);
-    return data.map((m) => ({
-      id: m.id, lastName: m.last_name, firstName: m.first_name, birthYear: m.birth_year ?? null,
-      category: m.category, kyu: m.kyu ?? 6, baseId: m.base_id,
-    }));
-  }
-  return demo.members;
+  if (isDemo) return demo.members;
+  const sb = await serverClient();
+  const { data, error } = await sb
+    .from("members")
+    .select("id,last_name,first_name,birth_year,category,kyu,base_id")
+    .eq("status", "active")
+    .order("last_name")
+    .order("first_name");
+  if (error) fail("members", error);
+  return data.map((m) => ({
+    id: m.id, lastName: m.last_name, firstName: m.first_name, birthYear: m.birth_year ?? null,
+    category: m.category, kyu: Number(m.kyu ?? 6), baseId: m.base_id,
+  }));
 }
 
 export async function getEvents(): Promise<ClubEvent[]> {

@@ -217,3 +217,25 @@ create policy results_trainer_write on results for insert with check (member_id 
 create policy results_own          on results for select using (member_id in (select private.my_member_ids()));
 
 -- Veřejný žebříček bez celých jmen se doplní jako pohled (view) až po rozhodnutí klubu o zveřejňování jmen.
+
+-- ---------------------------------------------------------------- ochrana profilu
+
+-- Uživatel smí ve svém profilu měnit jen must_change_password; vše ostatní (jméno, uživatelské
+-- jméno, vazba na člena) jen admin. Bez toho by si šlo připojit libovolného člena.
+create function private.guard_profile_update() returns trigger
+  language plpgsql set search_path = public as $$
+begin
+  if auth.uid() is not null and not private.has_role('admin')
+     and (new.id, new.full_name, new.username, new.member_id, new.created_at)
+         is distinct from (old.id, old.full_name, old.username, old.member_id, old.created_at) then
+    raise exception 'Tento údaj smí měnit jen správce';
+  end if;
+  return new;
+end $$;
+revoke execute on function private.guard_profile_update() from public, anon, authenticated;
+
+create trigger profiles_guard before update on profiles
+  for each row execute function private.guard_profile_update();
+
+create policy profiles_self_update on profiles for update
+  using (id = auth.uid()) with check (id = auth.uid());
