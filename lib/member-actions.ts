@@ -5,8 +5,8 @@ import { serverClient } from "./supabase-server";
 
 export type MembershipResult = { ok: boolean; error?: string };
 
-/** Změna typu příspěvku. Smí admin a trenér dané základny (vynucuje i databáze). */
-export async function setMembership(memberId: string, membership: "novacek" | "aktivni"): Promise<MembershipResult> {
+/** Změna členství. Smí admin a trenér dané základny (vynucuje i databáze). */
+export async function setMembership(memberId: string, membership: "novacek" | "hurikan" | "neaktivni"): Promise<MembershipResult> {
   const session = await getSession();
   if (!session || !(session.roles.includes("admin") || session.roles.includes("trainer"))) {
     return { ok: false, error: "Nemáte oprávnění." };

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { setMembership } from "@/lib/member-actions";
 import type { Base, Member } from "@/lib/types";
-import { CATEGORIES, MEMBERSHIP_LABEL } from "@/lib/types";
+import { CATEGORIES, MEMBERSHIP_LABEL, MEMBERSHIPS } from "@/lib/types";
 
 const PAGE = 50;
 
@@ -38,6 +38,7 @@ export default function MemberTable({
   const [q, setQ] = useState("");
   const [base, setBase] = useState("");
   const [cat, setCat] = useState("");
+  const [inactive, setInactive] = useState(false);
   const [shown, setShown] = useState(PAGE);
 
   const baseName = useMemo(() => new Map(bases.map((b) => [b.id, b.name])), [bases]);
@@ -48,9 +49,10 @@ export default function MemberTable({
       (m) =>
         (!base || m.baseId === base) &&
         (!cat || m.category === cat) &&
+        (inactive || (overrides[m.id] ?? m.membership) !== "neaktivni") &&
         (!needle || norm(`${m.lastName} ${m.firstName}`).includes(needle)),
     );
-  }, [members, q, base, cat]);
+  }, [members, q, base, cat, inactive, overrides]);
 
   const reset = () => setShown(PAGE);
 
@@ -109,7 +111,19 @@ export default function MemberTable({
         </label>
       </form>
 
-      <p className="mt-4 text-sm text-muted" aria-live="polite">
+      <label className="mt-4 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={inactive}
+          onChange={(e) => {
+            setInactive(e.target.checked);
+            reset();
+          }}
+        />
+        Zobrazit neaktivní
+      </label>
+
+      <p className="mt-2 text-sm text-muted" aria-live="polite">
         {filtered.length} z {members.length} členů
       </p>
 
@@ -127,7 +141,7 @@ export default function MemberTable({
               <th>Kat.</th>
               <th className="num pr-6">Kyu</th>
               <th className="hidden sm:table-cell">Základna</th>
-              <th>Příspěvek</th>
+              <th>Členství</th>
             </tr>
           </thead>
           <tbody>
@@ -141,8 +155,8 @@ export default function MemberTable({
                 <td className="hidden text-muted sm:table-cell">{baseName.get(m.baseId)}</td>
                 <td className="whitespace-nowrap">
                   {canEdit(m) ? (
-                    <span className="inline-flex border border-line text-sm" role="group" aria-label={`Typ příspěvku: ${m.lastName} ${m.firstName}`}>
-                      {(["novacek", "aktivni"] as const).map((v) => (
+                    <span className="inline-flex border border-line text-sm" role="group" aria-label={`Členství: ${m.lastName} ${m.firstName}`}>
+                      {MEMBERSHIPS.map((v) => (
                         <button
                           key={v}
                           type="button"

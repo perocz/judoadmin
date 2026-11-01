@@ -12,15 +12,17 @@ export type Member = {
   /** Žákovský technický stupeň (6 = nejnižší). */
   kyu: number;
   baseId: string;
-  /** Typ členského příspěvku podle ceníku: nováček a přípravka (1× týdně, 1600 Kč/pololetí) nebo aktivní člen a závodní tým (až 4× týdně, 2600 Kč/pololetí). */
+  /** Členství: nováček (začátečník, přípravka), hurikán (aktivní člen a závodní tým), neaktivní (přestal chodit nebo má pauzu). */
   membership: Membership;
 };
 
-export type Membership = "novacek" | "aktivni";
+export type Membership = "novacek" | "hurikan" | "neaktivni";
 export const MEMBERSHIP_LABEL: Record<Membership, string> = {
   novacek: "Nováček",
-  aktivni: "Aktivní",
+  hurikan: "Hurikán",
+  neaktivni: "Neaktivní",
 };
+export const MEMBERSHIPS: Membership[] = ["novacek", "hurikan", "neaktivni"];
 
 export type EventType = "turnaj" | "mistrovstvi-klubu" | "prespavacka" | "kemp" | "jine";
 

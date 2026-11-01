@@ -298,3 +298,7 @@ begin
   end if;
   return new;
 end $$;
+
+-- Členství: novacek | hurikan | neaktivni (původně novacek | aktivni)
+alter type membership_type rename value 'aktivni' to 'hurikan';
+alter type membership_type add value if not exists 'neaktivni';
