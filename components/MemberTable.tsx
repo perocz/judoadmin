@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { setMembership } from "@/lib/member-actions";
 import type { Base, Member } from "@/lib/types";
 import { CATEGORIES, MEMBERSHIP_LABEL } from "@/lib/types";
@@ -20,14 +20,21 @@ export default function MemberTable({
   bases: Base[];
   editableBaseIds: string[] | "all";
 }) {
-  const [pending, startTransition] = useTransition();
+  const [overrides, setOverrides] = useState<Record<string, Member["membership"]>>({});
   const [error, setError] = useState("");
   const canEdit = (m: Member) => editableBaseIds === "all" || editableBaseIds.includes(m.baseId);
-  const save = (m: Member, membership: Member["membership"], anyTraining: boolean) =>
-    startTransition(async () => {
-      const r = await setMembership(m.id, membership, anyTraining);
-      setError(r.ok ? "" : (r.error ?? "Uložení se nepodařilo."));
-    });
+  const typeOf = (m: Member) => overrides[m.id] ?? m.membership;
+  // Změna se ukáže hned, uložení běží na pozadí; při chybě se vrátí.
+  const save = async (m: Member, value: Member["membership"]) => {
+    const before = typeOf(m);
+    setOverrides((o) => ({ ...o, [m.id]: value }));
+    setError("");
+    const r = await setMembership(m.id, value);
+    if (!r.ok) {
+      setOverrides((o) => ({ ...o, [m.id]: before }));
+      setError(r.error ?? "Uložení se nepodařilo.");
+    }
+  };
   const [q, setQ] = useState("");
   const [base, setBase] = useState("");
   const [cat, setCat] = useState("");
@@ -134,32 +141,21 @@ export default function MemberTable({
                 <td className="hidden text-muted sm:table-cell">{baseName.get(m.baseId)}</td>
                 <td className="whitespace-nowrap">
                   {canEdit(m) ? (
-                    <span className="flex items-center gap-3">
-                      <select
-                        className="field py-1"
-                        aria-label={`Typ příspěvku: ${m.lastName} ${m.firstName}`}
-                        value={m.membership}
-                        disabled={pending}
-                        onChange={(e) => save(m, e.target.value as Member["membership"], m.anyTraining)}
-                      >
-                        <option value="standard">{MEMBERSHIP_LABEL.standard}</option>
-                        <option value="unlimited">{MEMBERSHIP_LABEL.unlimited}</option>
-                      </select>
-                      <label className="flex items-center gap-1 text-xs text-muted">
-                        <input
-                          type="checkbox"
-                          checked={m.anyTraining}
-                          disabled={pending}
-                          onChange={(e) => save(m, m.membership, e.target.checked)}
-                        />
-                        kamkoli
-                      </label>
+                    <span className="inline-flex border border-line text-sm" role="group" aria-label={`Typ příspěvku: ${m.lastName} ${m.firstName}`}>
+                      {(["novacek", "aktivni"] as const).map((v) => (
+                        <button
+                          key={v}
+                          type="button"
+                          aria-pressed={typeOf(m) === v}
+                          onClick={() => typeOf(m) !== v && save(m, v)}
+                          className={`px-3 py-1 ${typeOf(m) === v ? "bg-fg text-bg" : "text-muted hover:text-fg"}`}
+                        >
+                          {MEMBERSHIP_LABEL[v]}
+                        </button>
+                      ))}
                     </span>
                   ) : (
-                    <span>
-                      {MEMBERSHIP_LABEL[m.membership]}
-                      {m.anyTraining && <span className="text-muted"> · kamkoli</span>}
-                    </span>
+                    <span>{MEMBERSHIP_LABEL[typeOf(m)]}</span>
                   )}
                 </td>
               </tr>

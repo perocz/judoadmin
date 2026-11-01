@@ -79,8 +79,7 @@ export const members: Member[] = Array.from({ length: 60 }, (_, i) => {
     category,
     kyu: category === "Dospělí" ? 4 + Math.floor(rnd() * 3) : category === "U18" || category === "U16" ? 5 + Math.floor(rnd() * 2) : 6,
     baseId: pick(bases).id,
-    membership: "standard" as const,
-    anyTraining: false,
+    membership: "novacek" as const,
   };
 }).sort((a, b) => a.lastName.localeCompare(b.lastName, "cs") || a.firstName.localeCompare(b.firstName, "cs"));
 

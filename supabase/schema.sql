@@ -284,3 +284,17 @@ create table training_slots (
 --   registrations (status, late_excuse), funkce private.generate_trainings(weeks),
 --   trigger private.guard_registration (uzávěrka: trénink 1 h, ostatní akce 1 den), policies slots_* a events_trainer.
 --   Přesné znění je v migraci trainings_schedule.
+
+-- Typ příspěvku podle ceníku od 9/2026: novacek (1x týdně) / aktivni (až 4x týdně); příznak any_training zrušen
+alter type membership_type rename value 'standard' to 'novacek';
+alter type membership_type rename value 'unlimited' to 'aktivni';
+alter table members drop column any_training;
+create or replace function private.guard_member_update() returns trigger
+language plpgsql set search_path = public as $$
+begin
+  if auth.uid() is not null and not private.has_role('admin')
+     and (to_jsonb(new) - 'membership') is distinct from (to_jsonb(old) - 'membership') then
+    raise exception 'Trenér smí měnit jen typ příspěvku';
+  end if;
+  return new;
+end $$;
