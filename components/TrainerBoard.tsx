@@ -1,13 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { setTrainerAttendance } from "@/lib/training-actions";
 
 export type Who = { id: string; name: string; kind: "head" | "regular" | "guest"; status: "attending" | "excused" };
 export type BoardTraining = {
   id: string;
   dayKey: string;
+  /** Např. „po 2. 11.“ */
+  dayLabel: string;
   time: string;
+  attending: number;
+  excused: number;
   baseName: string;
   color: number; // odstín základny (hue)
   label: string | null;
@@ -53,48 +58,54 @@ export default function TrainerBoard({
 
   /** Hlavní trenéři a ostatní přihlášení; já se počítám podle aktuálního přepínače. */
   const lists = (t: BoardTraining) => {
-    const others = t.who.filter((w) => w.id !== myId && w.status === "attending");
+    const seen = new Set<string>();
+    const others = t.who.filter((w) => {
+      if (w.id === myId || w.status !== "attending" || seen.has(w.id)) return false;
+      seen.add(w.id);
+      return true;
+    });
     const me = isOn(t) ? [{ id: myId, name: myName, kind: t.myKind, status: "attending" as const }] : [];
     const all = [...others, ...me];
     return { head: all.filter((w) => w.kind === "head"), rest: all.filter((w) => w.kind !== "head") };
   };
 
-  const Switch = ({ t }: { t: BoardTraining }) => (
+  const Toggle = ({ t }: { t: BoardTraining }) => (
     <button
       type="button"
-      role="switch"
-      aria-checked={isOn(t)}
-      aria-label={`Jsem na tréninku ${t.baseName} ${t.dayKey} ${t.time}`}
+      aria-pressed={isOn(t)}
       onClick={() => toggle(t)}
-      className={`relative inline-block h-6 w-11 shrink-0 rounded-full border ${isOn(t) ? "border-fg bg-fg" : "border-line bg-bg"}`}
+      className={`shrink-0 border px-2 py-0.5 text-xs ${isOn(t) ? "border-fg bg-fg text-bg" : "border-line text-muted hover:border-fg hover:text-fg"}`}
     >
-      <span className={`absolute top-0.5 h-4.5 w-4.5 rounded-full ${isOn(t) ? "right-0.5 bg-bg" : "left-0.5 bg-muted"}`} style={{ width: 18, height: 18 }} />
+      {isOn(t) ? "✓ Jsem tam" : "Nejsem tam"}
     </button>
   );
 
   const Detail = ({ t }: { t: BoardTraining }) => {
     const { head, rest } = lists(t);
     return (
-      <div className="space-y-1 text-sm">
-        <p>
-          <span className="text-muted">Hlavní: </span>
-          {head.length ? head.map((h) => h.name).join(", ") : "—"}
+      <div className="space-y-0.5 text-sm">
+        <p className="text-muted">
+          Hlavní: <span className="text-fg">{head.length ? head.map((h) => h.name).join(", ") : "—"}</span>
+          {" · "}Další: <span className="text-fg">{rest.length ? rest.map((h) => h.name).join(", ") : "—"}</span>
         </p>
-        <p>
-          <span className="text-muted">Další: </span>
-          {rest.length ? rest.map((h) => h.name).join(", ") : "—"}
-        </p>
-        {!t.cancelled && (
-          <div className="flex items-center gap-2 pt-1">
-            <Switch t={t} />
-            <span className="text-muted">{isOn(t) ? "Jsem na tréninku" : "Nejsem na tréninku"}</span>
-          </div>
-        )}
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-muted">
+            {t.attending} cvičenců{t.excused > 0 ? `, ${t.excused} omluveno` : ""}
+            {t.home && (
+              <>
+                {" · "}
+                <Link href={`/dochazka/${t.id}`}>Docházka →</Link>
+              </>
+            )}
+          </p>
+          {t.cancelled ? <span className="text-xs text-accent">zrušeno</span> : <Toggle t={t} />}
+        </div>
       </div>
     );
   };
 
-  const mineList = trainings.filter((t) => isOn(t) && !t.cancelled);
+  // Tréninky mé základny zůstávají nahoře i po odhlášení (informace o tréninku se neztrácí).
+  const mineList = trainings.filter((t) => t.home || (isOn(t) && !t.cancelled));
   const byDay = new Map<string, BoardTraining[]>();
   for (const t of trainings) byDay.set(t.dayKey, [...(byDay.get(t.dayKey) ?? []), t]);
   const weeks: BoardDay[][] = [];
@@ -115,17 +126,17 @@ export default function TrainerBoard({
         {mineList.length === 0 ? (
           <p className="text-muted">Zatím nejsi zapsán na žádný trénink.</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-1.5">
             {mineList.map((t) => (
-              <li key={t.id} className="p-3" style={tint(t.color)}>
-                <p>
-                  <span className="font-mono text-sm">
-                    {days.find((d) => d.key === t.dayKey)?.weekdayLabel} {days.find((d) => d.key === t.dayKey)?.label} {t.time}
+              <li key={t.id} className={`px-3 py-2 ${isOn(t) || t.cancelled ? "" : "opacity-60"}`} style={tint(t.color)}>
+                <p className="text-sm">
+                  <span className="font-mono">
+                    {t.dayLabel} {t.time.slice(0, 5)}
                   </span>{" "}
                   <strong className="font-medium">{t.baseName}</strong>
-                  {t.label && <span className="text-muted"> · {t.label}</span>}
+                  {t.label && <span className="hidden text-muted sm:inline"> · {t.label}</span>}
                 </p>
-                <div className="mt-2">
+                <div className="mt-1">
                   <Detail t={t} />
                 </div>
               </li>

@@ -328,3 +328,6 @@ create table attendance (
 
 -- create_account má parametr p_level (hlavní | stálý trenér); trenér bez základny (base_id null) = trenér bez příznaku.
 -- Migrace create_account_trainer_level.
+
+-- Docházka: tabulka attendance přejmenována na absences = jen absence bez omluvy (migrace attendance_to_absences).
+-- Přítomni jsou automaticky všichni členové základny bez omluvy a hosté; trenér zapisuje jen absenci.

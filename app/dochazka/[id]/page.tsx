@@ -36,12 +36,12 @@ async function Content({ params }: { params: PageProps<"/dochazka/[id]">["params
     getBases(),
     sb.from("members").select("id,first_name,last_name").eq("base_id", ev.base_id!).eq("status", "active").neq("membership", "neaktivni"),
     sb.from("registrations").select("member_id,status,late_excuse,members(first_name,last_name,base_id)").eq("event_id", id),
-    sb.from("attendance").select("member_id").eq("event_id", id),
+    sb.from("absences").select("member_id").eq("event_id", id),
   ]);
   const rows = new Map<string, Row>();
-  const present = new Set((att.data ?? []).map((a) => a.member_id));
+  const absent = new Set((att.data ?? []).map((a) => a.member_id));
   for (const m of members.data ?? []) {
-    rows.set(m.id, { id: m.id, name: `${m.last_name} ${m.first_name}`, guest: false, reg: null, late: false, present: present.has(m.id) });
+    rows.set(m.id, { id: m.id, name: `${m.last_name} ${m.first_name}`, guest: false, reg: null, late: false, absent: absent.has(m.id) });
   }
   for (const r of regs.data ?? []) {
     const m = r.members as unknown as { first_name: string; last_name: string; base_id: string } | null;
@@ -51,7 +51,7 @@ async function Content({ params }: { params: PageProps<"/dochazka/[id]">["params
       guest: m ? m.base_id !== ev.base_id : true,
       reg: null,
       late: false,
-      present: present.has(r.member_id),
+      absent: absent.has(r.member_id),
     };
     row.reg = r.status;
     row.late = r.late_excuse;

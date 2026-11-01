@@ -36,13 +36,13 @@ export async function setRegistration(
 }
 
 /** Trenér/admin: zapíše nebo zruší přítomnost. */
-export async function setAttendance(eventId: string, memberId: string, present: boolean): Promise<ActionResult> {
+export async function setAbsence(eventId: string, memberId: string, absent: boolean): Promise<ActionResult> {
   const session = await getSession();
   if (!session) return DENIED;
   const sb = await serverClient();
-  const { error } = present
-    ? await sb.from("attendance").upsert({ event_id: eventId, member_id: memberId, marked_by: session.userId })
-    : await sb.from("attendance").delete().eq("event_id", eventId).eq("member_id", memberId);
+  const { error } = absent
+    ? await sb.from("absences").upsert({ event_id: eventId, member_id: memberId, marked_by: session.userId })
+    : await sb.from("absences").delete().eq("event_id", eventId).eq("member_id", memberId);
   return error ? FAILED : { ok: true };
 }
 

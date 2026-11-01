@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { setAttendance, setTrainingStatus } from "@/lib/training-actions";
+import { setAbsence, setTrainingStatus } from "@/lib/training-actions";
 
-export type Row = { id: string; name: string; guest: boolean; reg: "attending" | "excused" | null; late: boolean; present: boolean };
+export type Row = { id: string; name: string; guest: boolean; reg: "attending" | "excused" | null; late: boolean; absent: boolean };
 type Status = "planned" | "cancelled" | "cancelled_replacement";
 
 export default function AttendanceList({
@@ -19,18 +19,18 @@ export default function AttendanceList({
   otherBases: { id: string; name: string }[];
   replacementIds: string[];
 }) {
-  const [present, setPresent] = useState<Record<string, boolean>>(Object.fromEntries(rows.map((r) => [r.id, r.present])));
+  const [absent, setAbsent] = useState<Record<string, boolean>>(Object.fromEntries(rows.map((r) => [r.id, r.absent])));
   const [status, setStatus] = useState<Status>(initialStatus);
   const [repl, setRepl] = useState<string[]>(replacementIds);
   const [error, setError] = useState("");
 
   const toggle = async (id: string) => {
-    const next = !present[id];
-    setPresent((p) => ({ ...p, [id]: next }));
+    const next = !absent[id];
+    setAbsent((p) => ({ ...p, [id]: next }));
     setError("");
-    const r = await setAttendance(eventId, id, next);
+    const r = await setAbsence(eventId, id, next);
     if (!r.ok) {
-      setPresent((p) => ({ ...p, [id]: !next }));
+      setAbsent((p) => ({ ...p, [id]: !next }));
       setError(r.error ?? "Uložení se nepodařilo.");
     }
   };
@@ -46,9 +46,14 @@ export default function AttendanceList({
   };
   const btn = (active: boolean) =>
     `border px-3 py-1 text-sm ${active ? "border-fg bg-fg text-bg" : "border-line text-muted hover:text-fg"}`;
+  const state = (r: Row) => (r.reg === "excused" ? "excused" : absent[r.id] ? "absent" : "present");
+  const order = { present: 0, absent: 1, excused: 2 } as const;
   const sorted = [...rows].sort(
-    (a, b) => Number(!!b.reg) - Number(!!a.reg) || Number(b.guest) - Number(a.guest) || a.name.localeCompare(b.name, "cs"),
+    (a, b) => order[state(a)] - order[state(b)] || Number(b.guest) - Number(a.guest) || a.name.localeCompare(b.name, "cs"),
   );
+  const nPresent = rows.filter((r) => state(r) === "present").length;
+  const nExcused = rows.filter((r) => state(r) === "excused").length;
+  const nAbsent = rows.filter((r) => state(r) === "absent").length;
 
   return (
     <div className="space-y-8">
@@ -94,19 +99,31 @@ export default function AttendanceList({
       </section>
 
       <section>
-        <h2 className="label mb-2">Docházka</h2>
+        <h2 className="label mb-1">Docházka</h2>
+        <p className="mb-2 text-sm text-muted">
+          Přítomno {nPresent} · omluveno {nExcused} · absence bez omluvy {nAbsent}. Všichni přihlášení jsou přítomni, zapisuje se jen absence.
+        </p>
         <ul className="divide-y divide-line border-y border-line">
-          {sorted.map((r) => (
-            <li key={r.id}>
-              <label className="flex cursor-pointer items-center gap-3 py-2">
-                <input type="checkbox" className="h-5 w-5" checked={!!present[r.id]} onChange={() => toggle(r.id)} />
-                <span>{r.name}</span>
+          {sorted.map((r) => {
+            const st = state(r);
+            return (
+              <li key={r.id} className="flex items-center gap-2 py-1.5">
+                <span className={`min-w-0 flex-1 truncate ${st === "excused" ? "text-muted" : ""} ${st === "absent" ? "line-through" : ""}`}>{r.name}</span>
                 {r.guest && <span className="text-xs text-muted">host</span>}
-                {r.reg === "attending" && <span className="text-xs text-muted">přihlášen</span>}
-                {r.reg === "excused" && <span className="text-xs text-accent">omluven{r.late ? " zpětně" : ""}</span>}
-              </label>
-            </li>
-          ))}
+                {st === "excused" && <span className="text-xs text-accent">omluven{r.late ? " zpětně" : ""}</span>}
+                {st === "absent" && <span className="text-xs text-accent">absence</span>}
+                {st !== "excused" && (
+                  <button
+                    type="button"
+                    onClick={() => toggle(r.id)}
+                    className="border border-line px-2 py-0.5 text-xs text-muted hover:border-fg hover:text-fg"
+                  >
+                    {st === "absent" ? "Byl tu" : "Absence"}
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
     </div>
