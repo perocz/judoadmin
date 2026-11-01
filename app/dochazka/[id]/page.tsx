@@ -75,7 +75,7 @@ async function Content({ params }: { params: PageProps<"/dochazka/[id]">["params
           <p className="text-muted">Žádní.</p>
         ) : (
           <ul className="space-y-0.5">
-            {trainerList.map((t) => (
+            {[...trainerList].sort((a, b) => Number(b.status === "excused") - Number(a.status === "excused")).map((t) => (
               <li key={t.id} className={t.status === "excused" ? "text-muted line-through" : ""}>
                 {t.name} <span className="text-sm text-muted">· {KIND[t.kind]}{t.status === "excused" ? ", odhlášen" : ""}</span>
               </li>

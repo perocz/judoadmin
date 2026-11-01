@@ -47,7 +47,7 @@ export default function AttendanceList({
   const btn = (active: boolean) =>
     `border px-3 py-1 text-sm ${active ? "border-fg bg-fg text-bg" : "border-line text-muted hover:text-fg"}`;
   const state = (r: Row) => (r.reg === "excused" ? "excused" : absent[r.id] ? "absent" : "present");
-  const order = { present: 0, absent: 1, excused: 2 } as const;
+  const order = { excused: 0, absent: 1, present: 2 } as const;
   const sorted = [...rows].sort(
     (a, b) => order[state(a)] - order[state(b)] || Number(b.guest) - Number(a.guest) || a.name.localeCompare(b.name, "cs"),
   );
