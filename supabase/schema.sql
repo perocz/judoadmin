@@ -12,37 +12,28 @@ create table bases (
   created_at  timestamptz not null default now()
 );
 
-create type app_role as enum ('admin', 'trainer', 'parent');
+-- Role: admin (vše), moderator (články a akce), trainer (svěřená základna a její články),
+-- parent (své děti), member (sám za sebe). Uživatel může mít víc rolí.
+create type app_role as enum ('admin', 'trainer', 'parent', 'moderator', 'member');
 create type event_type as enum ('turnaj', 'mistrovstvi-klubu', 'prespavacka', 'kemp', 'jine');
 create type member_status as enum ('active', 'ended');
 
 -- ---------------------------------------------------------------- uživatelé
 
--- Vazba na přihlášení Supabase (auth.users). Role určuje, co uživatel smí.
+-- Vazba na přihlášení Supabase (auth.users). Uživatelské jméno ve tvaru jmeno.prijmeni.
+-- member_id: člen, za kterého se uživatel přihlašuje sám (role member).
+-- must_change_password: do první změny hesla se uživateli ukáže jen formulář pro změnu.
 create table profiles (
   id          uuid primary key references auth.users on delete cascade,
   full_name   text not null,
-  role        app_role not null default 'parent',
-  base_id     uuid references bases (id),      -- jen pro trenéra
+  username    text unique check (username ~ '^[a-z0-9]+(\.[a-z0-9]+)*$'),
+  member_id   uuid,                                -- reference se doplní níže, po vytvoření members
+  must_change_password boolean not null default true,
   created_at  timestamptz not null default now()
 );
 
 create schema if not exists private;
 grant usage on schema private to anon, authenticated;
-
--- Pomocné funkce jsou v neveřejném schématu, aby nešly volat přes REST API.
-create function private.current_app_role() returns app_role
-  language sql stable security definer set search_path = public as
-  $$ select role from profiles where id = auth.uid() $$;
-
-create function private.current_trainer_base() returns uuid
-  language sql stable security definer set search_path = public as
-  $$ select base_id from profiles where id = auth.uid() and role = 'trainer' $$;
-
-revoke execute on function private.current_app_role() from public;
-revoke execute on function private.current_trainer_base() from public;
-grant execute on function private.current_app_role() to anon, authenticated;
-grant execute on function private.current_trainer_base() to anon, authenticated;
 
 -- ---------------------------------------------------------------- členové
 
@@ -70,6 +61,40 @@ create table guardians (
   member_id   uuid not null references members (id) on delete cascade,
   primary key (profile_id, member_id)
 );
+
+alter table profiles add constraint profiles_member_fk foreign key (member_id) references members (id) on delete set null;
+
+-- Role uživatele. Trenér je vždy vázaný na základnu (může jich mít víc), ostatní role ne.
+create table user_roles (
+  profile_id uuid not null references profiles (id) on delete cascade,
+  role       app_role not null,
+  base_id    uuid references bases (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  check ((role = 'trainer') = (base_id is not null))
+);
+create unique index user_roles_unique on user_roles (profile_id, role, coalesce(base_id, '00000000-0000-0000-0000-000000000000'));
+
+-- Pomocné funkce jsou v neveřejném schématu, aby nešly volat přes REST API.
+create function private.has_role(r app_role) returns boolean
+  language sql stable security definer set search_path = public as
+  $$ select exists (select 1 from user_roles where profile_id = auth.uid() and role = r) $$;
+
+create function private.trains_base(b uuid) returns boolean
+  language sql stable security definer set search_path = public as
+  $$ select exists (select 1 from user_roles where profile_id = auth.uid() and role = 'trainer' and base_id = b) $$;
+
+create function private.my_member_ids() returns setof uuid
+  language sql stable security definer set search_path = public as
+  $$ select member_id from profiles where id = auth.uid() and member_id is not null
+     union select member_id from guardians where profile_id = auth.uid() $$;
+
+create function private.my_base_ids() returns setof uuid
+  language sql stable security definer set search_path = public as
+  $$ select base_id from members where id in (select private.my_member_ids())
+     union select base_id from user_roles where profile_id = auth.uid() and role = 'trainer' $$;
+
+revoke execute on function private.has_role(app_role), private.trains_base(uuid), private.my_member_ids(), private.my_base_ids() from public;
+grant execute on function private.has_role(app_role), private.trains_base(uuid), private.my_member_ids(), private.my_base_ids() to anon, authenticated;
 
 -- ---------------------------------------------------------------- akce
 
@@ -129,6 +154,7 @@ create table posts (
   body          text not null default '',
   excerpt       text not null default '',
   attachment_url text,
+  base_id       uuid references bases (id) on delete cascade,  -- null = článek celého klubu, jinak extra článek základny
   published_at  timestamptz,                    -- null = koncept
   created_at    timestamptz not null default now()
 );
@@ -137,6 +163,7 @@ create table posts (
 
 alter table bases         enable row level security;
 alter table profiles      enable row level security;
+alter table user_roles    enable row level security;
 alter table members       enable row level security;
 alter table guardians     enable row level security;
 alter table events        enable row level security;
@@ -144,54 +171,49 @@ alter table registrations enable row level security;
 alter table results       enable row level security;
 alter table posts         enable row level security;
 
--- Veřejně čitelné: základny, akce, zveřejněné aktuality.
+-- Základny a akce jsou veřejné, spravuje je admin (akce i moderátor).
 create policy bases_read  on bases  for select using (true);
+create policy bases_admin on bases  for all using (private.has_role('admin')) with check (private.has_role('admin'));
 create policy events_read on events for select using (true);
-create policy posts_read  on posts  for select using (published_at is not null and published_at <= now());
+create policy events_staff on events for all
+  using (private.has_role('admin') or private.has_role('moderator'))
+  with check (private.has_role('admin') or private.has_role('moderator'));
 
--- Členové: admin vše, trenér svoji základnu, rodič své děti.
-create policy members_admin  on members for all    using (private.current_app_role() = 'admin') with check (private.current_app_role() = 'admin');
-create policy members_trainer on members for select using (private.current_app_role() = 'trainer' and base_id = private.current_trainer_base());
-create policy members_parent on members for select using (
-  exists (select 1 from guardians g where g.member_id = members.id and g.profile_id = auth.uid())
-);
+-- Uživatelé a role: každý vidí své, admin všechno.
+create policy profiles_self  on profiles   for select using (id = auth.uid() or private.has_role('admin'));
+create policy profiles_admin on profiles   for all using (private.has_role('admin')) with check (private.has_role('admin'));
+create policy roles_self     on user_roles for select using (profile_id = auth.uid() or private.has_role('admin'));
+create policy roles_admin    on user_roles for all using (private.has_role('admin')) with check (private.has_role('admin'));
+create policy guardians_self  on guardians for select using (profile_id = auth.uid() or private.has_role('admin'));
+create policy guardians_admin on guardians for all using (private.has_role('admin')) with check (private.has_role('admin'));
 
--- Profil: každý vidí a mění jen svůj; admin všechny.
-create policy profiles_self  on profiles for select using (id = auth.uid() or private.current_app_role() = 'admin');
-create policy profiles_admin on profiles for all    using (private.current_app_role() = 'admin') with check (private.current_app_role() = 'admin');
-create policy guardians_read on guardians for select using (profile_id = auth.uid() or private.current_app_role() = 'admin');
-create policy guardians_admin on guardians for all   using (private.current_app_role() = 'admin') with check (private.current_app_role() = 'admin');
+-- Členové: admin vše, trenér svoji základnu, rodič a člen jen sebe a své děti.
+create policy members_admin   on members for all using (private.has_role('admin')) with check (private.has_role('admin'));
+create policy members_trainer on members for select using (private.trains_base(base_id));
+create policy members_own     on members for select using (id in (select private.my_member_ids()));
 
--- Akce, aktuality a výsledky spravuje admin (trenér zapisuje výsledky své základny).
-create policy events_admin on events for all using (private.current_app_role() = 'admin') with check (private.current_app_role() = 'admin');
-create policy posts_admin  on posts  for all using (private.current_app_role() = 'admin') with check (private.current_app_role() = 'admin');
-create policy bases_admin  on bases  for all using (private.current_app_role() = 'admin') with check (private.current_app_role() = 'admin');
+-- Aktuality: celoklubové zveřejněné vidí každý, základnové jen lidé z té základny.
+-- Píše admin a moderátor, trenér jen extra články své základny.
+create policy posts_public  on posts for select using (base_id is null and published_at is not null and published_at <= now());
+create policy posts_base    on posts for select using (base_id in (select private.my_base_ids()) and published_at is not null and published_at <= now());
+create policy posts_staff   on posts for all
+  using (private.has_role('admin') or private.has_role('moderator'))
+  with check (private.has_role('admin') or private.has_role('moderator'));
+create policy posts_trainer on posts for all
+  using (base_id is not null and private.trains_base(base_id))
+  with check (base_id is not null and private.trains_base(base_id));
 
--- Přihlášky: admin vše; trenér základny; rodič přihlašuje a ruší jen své děti.
-create policy reg_admin   on registrations for all using (private.current_app_role() = 'admin') with check (private.current_app_role() = 'admin');
-create policy reg_trainer on registrations for select using (
-  private.current_app_role() = 'trainer' and exists (select 1 from members m where m.id = registrations.member_id and m.base_id = private.current_trainer_base())
-);
-create policy reg_parent_read on registrations for select using (
-  exists (select 1 from guardians g where g.member_id = registrations.member_id and g.profile_id = auth.uid())
-);
-create policy reg_parent_write on registrations for insert with check (
-  exists (select 1 from guardians g where g.member_id = registrations.member_id and g.profile_id = auth.uid())
-);
-create policy reg_parent_delete on registrations for delete using (
-  exists (select 1 from guardians g where g.member_id = registrations.member_id and g.profile_id = auth.uid())
-);
+-- Přihlášky: admin vše, trenér čte svoji základnu, rodič a člen přihlašují a ruší jen své.
+create policy reg_admin      on registrations for all using (private.has_role('admin')) with check (private.has_role('admin'));
+create policy reg_trainer    on registrations for select using (member_id in (select id from members where private.trains_base(base_id)));
+create policy reg_own_read   on registrations for select using (member_id in (select private.my_member_ids()));
+create policy reg_own_insert on registrations for insert with check (member_id in (select private.my_member_ids()));
+create policy reg_own_delete on registrations for delete using (member_id in (select private.my_member_ids()));
 
--- Výsledky: čtení jako u členů; zápis admin a trenér své základny.
-create policy results_admin on results for all using (private.current_app_role() = 'admin') with check (private.current_app_role() = 'admin');
-create policy results_trainer_read on results for select using (
-  private.current_app_role() = 'trainer' and exists (select 1 from members m where m.id = results.member_id and m.base_id = private.current_trainer_base())
-);
-create policy results_trainer_write on results for insert with check (
-  private.current_app_role() = 'trainer' and exists (select 1 from members m where m.id = results.member_id and m.base_id = private.current_trainer_base())
-);
-create policy results_parent_read on results for select using (
-  exists (select 1 from guardians g where g.member_id = results.member_id and g.profile_id = auth.uid())
-);
+-- Výsledky: admin vše, trenér čte a zapisuje svoji základnu, rodič a člen čtou své.
+create policy results_admin        on results for all using (private.has_role('admin')) with check (private.has_role('admin'));
+create policy results_trainer_read  on results for select using (member_id in (select id from members where private.trains_base(base_id)));
+create policy results_trainer_write on results for insert with check (member_id in (select id from members where private.trains_base(base_id)));
+create policy results_own          on results for select using (member_id in (select private.my_member_ids()));
 
 -- Veřejný žebříček bez celých jmen se doplní jako pohled (view) až po rozhodnutí klubu o zveřejňování jmen.
