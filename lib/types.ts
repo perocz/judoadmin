@@ -7,7 +7,7 @@ export type Member = {
   id: string;
   lastName: string;
   firstName: string;
-  birthYear: number;
+  birthYear: number | null;
   category: Category;
   /** Žákovský technický stupeň (6 = nejnižší). */
   kyu: number;

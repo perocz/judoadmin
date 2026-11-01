@@ -55,7 +55,7 @@ export async function getMembers(): Promise<Member[]> {
       .order("last_name");
     if (error) fail("members", error);
     return data.map((m) => ({
-      id: m.id, lastName: m.last_name, firstName: m.first_name, birthYear: m.birth_year,
+      id: m.id, lastName: m.last_name, firstName: m.first_name, birthYear: m.birth_year ?? null,
       category: m.category, kyu: m.kyu ?? 6, baseId: m.base_id,
     }));
   }

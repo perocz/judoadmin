@@ -50,9 +50,9 @@ create table members (
   id            uuid primary key default gen_random_uuid(),
   last_name     text not null,
   first_name    text not null,
-  birth_year    int  not null check (birth_year between 1930 and 2100),
+  birth_year    int  check (birth_year between 1930 and 2100),   -- starý systém rok narození v seznamu nemá
   category      text not null check (category in ('U8','U10','U12','U14','U16','U18','Dospělí')),
-  kyu           int  check (kyu between 0 and 6),
+  kyu           numeric(2,1) check (kyu between 0 and 6),        -- půlené stupně (4.5) se ve starém systému vyskytují
   base_id       uuid not null references bases (id),
   status        member_status not null default 'active',
   joined_on     date,
@@ -60,6 +60,7 @@ create table members (
   legacy_id     text,                           -- identifikátor ve starém systému (pro import)
   created_at    timestamptz not null default now()
 );
+create unique index members_legacy_id_key on members (legacy_id);
 create index members_base_idx on members (base_id);
 create index members_name_idx on members (last_name, first_name);
 
