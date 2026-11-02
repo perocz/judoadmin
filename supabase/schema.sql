@@ -342,3 +342,7 @@ create table attendance (
 -- stav 'attending', registration_open, kapacitu a uzávěrku 1 den před akcí (personál výjimka);
 -- jednodenní akce mají stays_overnight=false. Funkce public.event_counts() vrací počty
 -- přihlášených po akcích a základnách (security definer, jen pro přihlášené).
+
+-- Migrace member_photos, member_photos_guard: members.photo_updated_at, privátní bucket member-photos
+-- (soubor <member_id>.webp, čtení kdo vidí člena, zápis jen člen/zákonný zástupce),
+-- public.set_member_photo(member, has) a výjimka pro photo_updated_at v guard_member_update().
