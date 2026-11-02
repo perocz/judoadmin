@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import { isDemo } from "@/lib/data";
 import UserMenu from "@/components/UserMenu";
+import HomeLink, { Brand } from "@/components/HomeLink";
 import RoleBar from "@/components/RoleBar";
 
 export const metadata: Metadata = {
@@ -31,10 +32,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         )}
         <header className="border-b border-line">
           <div className="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-baseline sm:justify-between">
-            <Link href="/" className="no-underline">
-              <span className="text-lg font-semibold tracking-[0.18em] uppercase">Judo Beskydy</span>
-              <span className="ml-3 text-sm text-muted">správa klubu</span>
-            </Link>
+            {isDemo ? (
+              <Brand href="/" />
+            ) : (
+              <Suspense fallback={<Brand href="/" />}>
+                <HomeLink />
+              </Suspense>
+            )}
             <nav aria-label="Hlavní navigace">
               <ul className="flex flex-wrap gap-x-5 gap-y-1 text-[0.9375rem]">
                 {isDemo ? (

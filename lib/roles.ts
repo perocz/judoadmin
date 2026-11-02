@@ -19,16 +19,19 @@ export type MenuItem = { href: string; label: string };
  */
 export function menuFor(role: Role): MenuItem[] {
   const home = { href: "/prehled", label: "Přehled" };
+  // Společné všem rolím: akce klubu, žebříček a změna vlastního hesla.
+  const common = [{ href: "/akce", label: "Akce" }, { href: "/zebricek", label: "Žebříček" }];
+  const password = { href: "/heslo", label: "Změnit heslo" };
   switch (role) {
     case "admin":
-      return [home, { href: "/clenove", label: "Členové" }, { href: "/dochazka", label: "Tréninky" }, { href: "/ucty", label: "Účty" }];
+      return [home, { href: "/clenove", label: "Členové" }, { href: "/dochazka", label: "Tréninky" }, ...common, { href: "/ucty", label: "Účty" }, password];
     case "moderator":
-      return [home];
+      return [home, ...common, password];
     case "trainer":
-      return [home, { href: "/clenove", label: "Moje základna" }, { href: "/dochazka", label: "Docházka" }, { href: "/trener-treninky", label: "Tréninky" }, { href: "/ucty", label: "Účty rodičů" }];
+      return [home, { href: "/clenove", label: "Moje základna" }, { href: "/dochazka", label: "Docházka" }, { href: "/trener-treninky", label: "Tréninky" }, ...common, { href: "/ucty", label: "Účty rodičů" }, password];
     case "parent":
-      return [home, { href: "/clenove", label: "Moje děti" }, { href: "/moje-treninky", label: "Tréninky" }];
+      return [home, { href: "/clenove", label: "Moje děti" }, { href: "/moje-treninky", label: "Tréninky" }, ...common, password];
     case "member":
-      return [home, { href: "/clenove", label: "Můj profil" }, { href: "/moje-treninky", label: "Tréninky" }];
+      return [home, { href: "/clenove", label: "Můj profil" }, { href: "/moje-treninky", label: "Tréninky" }, ...common, password];
   }
 }
