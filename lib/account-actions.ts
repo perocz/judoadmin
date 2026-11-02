@@ -60,7 +60,9 @@ export async function resetPassword(profileId: string): Promise<ResetResult> {
   const sb = await serverClient();
   const { data, error } = await sb.rpc("reset_password", { p_profile: profileId });
   if (error) {
-    return { ok: false, error: /smí|Smíte|Nemáte|neexistuje|Nejste/.test(error.message) ? error.message : "Obnovení hesla se nepodařilo." };
+    if (/smí|Smíte|Nemáte|neexistuje|Nejste/.test(error.message)) return { ok: false, error: error.message };
+    // Neočekávaná chyba: důvod se ukáže, ať se dá příčina dohledat (volat smí jen správce a trenér).
+    return { ok: false, error: `Obnovení hesla se nepodařilo (${error.code ?? "?"}: ${error.message}).` };
   }
   return { ok: true, password: data as string };
 }
