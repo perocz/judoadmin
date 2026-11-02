@@ -337,3 +337,8 @@ create table attendance (
 -- Obnova hesla: public.reset_password(profile) vrací náhodné dočasné heslo (10 znaků), nastaví must_change_password
 -- a odhlásí účet. Smí správce (kdokoli) a trenér (rodiče a členové jeho základny, nikdy trenér, moderátor ani správce).
 -- Právo spouštění má jen přihlášený. Migrace reset_password_function a reset_password_grant.
+
+-- Migrace event_registration_rules: guard_registration() hlídá u akcí (ne tréninků)
+-- stav 'attending', registration_open, kapacitu a uzávěrku 1 den před akcí (personál výjimka);
+-- jednodenní akce mají stays_overnight=false. Funkce public.event_counts() vrací počty
+-- přihlášených po akcích a základnách (security definer, jen pro přihlášené).
