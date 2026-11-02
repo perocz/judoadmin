@@ -50,6 +50,8 @@ export type ClubEvent = {
   description?: string;
   /** Odkaz na pozvánku, rozpis nebo propozice. */
   documentUrl?: string;
+  /** Je-li false, přihlašování je uzavřeno (bez hodnoty = otevřeno). */
+  registrationOpen?: boolean;
 };
 
 export type Registration = { eventId: string; memberId: string };

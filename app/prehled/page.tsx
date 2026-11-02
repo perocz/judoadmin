@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getActiveRole } from "@/lib/active-role";
 import { ROLE_LABEL } from "@/lib/roles";
+import { getMyUpcomingEvents } from "@/lib/events";
+import { formatRange } from "@/lib/format";
 import { requireSession } from "@/lib/session";
 import { fmtDay, fmtTime, getMyMembers, getMyRegs, getTrainersByEvent, getTrainings, presentTrainers } from "@/lib/trainings";
 import { serverClient } from "@/lib/supabase-server";
@@ -70,7 +72,34 @@ async function Family() {
       <p className="mt-4 text-sm">
         <Link href="/moje-treninky">Omluvit nebo přihlásit hosta →</Link>
       </p>
+      <Events people={people} />
     </section>
+  );
+}
+
+/** Nadcházející akce, na které jsou přihlášení já nebo moje děti. */
+async function Events({ people }: { people: { id: string; name: string }[] }) {
+  const events = await getMyUpcomingEvents(people);
+  return (
+    <div className="mt-10">
+      <h2 className="label mb-3">Moje akce</h2>
+      {events.length === 0 ? (
+        <p className="text-muted">Zatím nejsi přihlášen na žádnou akci.</p>
+      ) : (
+        <ul className="divide-y divide-line border-y border-line">
+          {events.map((e) => (
+            <li key={e.eventId} className="py-3">
+              <span className="font-mono text-sm">{formatRange(e.startsOn, e.endsOn)}</span>{" "}
+              <Link href={`/akce/${e.eventId}`}>{e.title}</Link>
+              {people.length > 1 && <span className="text-sm text-muted"> · {e.names.join(", ")}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-4 text-sm">
+        <Link href="/akce">Všechny akce a přihlášení →</Link>
+      </p>
+    </div>
   );
 }
 

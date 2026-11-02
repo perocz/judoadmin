@@ -14,6 +14,7 @@ export const isDemo = !hasSupabase;
 type EventRow = {
   id: string; title: string; type: ClubEvent["type"]; starts_on: string; ends_on: string;
   venue: string | null; city: string | null; capacity: number; description: string | null; document_url: string | null;
+  registration_open: boolean;
 };
 
 function toEvent(r: EventRow): ClubEvent {
@@ -21,6 +22,7 @@ function toEvent(r: EventRow): ClubEvent {
     id: r.id, title: r.title, type: r.type, startsOn: r.starts_on, endsOn: r.ends_on,
     venue: r.venue ?? undefined, city: r.city ?? undefined, capacity: r.capacity,
     description: r.description ?? undefined, documentUrl: r.document_url ?? undefined,
+    registrationOpen: r.registration_open,
   };
 }
 
@@ -71,7 +73,7 @@ export async function getEvents(): Promise<ClubEvent[]> {
   if (!isDemo) {
     const { data, error } = await publicClient()
       .from("events")
-      .select("id,title,type,starts_on,ends_on,venue,city,capacity,description,document_url")
+      .select("id,title,type,starts_on,ends_on,venue,city,capacity,description,document_url,registration_open")
       .neq("type", "trenink") // tréninky mají vlastní přehled
       .order("starts_on");
     if (error) fail("events", error);
@@ -86,7 +88,7 @@ export async function getEvent(id: string): Promise<ClubEvent | null> {
   if (!isDemo) {
     const { data, error } = await publicClient()
       .from("events")
-      .select("id,title,type,starts_on,ends_on,venue,city,capacity,description,document_url")
+      .select("id,title,type,starts_on,ends_on,venue,city,capacity,description,document_url,registration_open")
       .eq("id", id)
       .maybeSingle();
     if (error) fail("event", error);
