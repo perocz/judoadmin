@@ -1,3 +1,4 @@
+import WeightEditor from "@/components/WeightEditor";
 import PhotoEditor from "@/components/PhotoEditor";
 import { formatDate } from "@/lib/format";
 import type { Card } from "@/lib/profile";
@@ -25,6 +26,7 @@ export default function MemberCard({ card }: { card: Card }) {
             </div>
           ))}
         </dl>
+        <WeightEditor memberId={card.id} initialKg={card.weightKg} updatedOn={card.weightUpdatedOn} />
       </div>
     </article>
   );

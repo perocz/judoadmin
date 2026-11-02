@@ -12,6 +12,8 @@ export type Card = {
   membership: string;
   joinedOn: string | null;
   photoUrl: string | null;
+  weightKg: number | null;
+  weightUpdatedOn: string | null;
 };
 
 /** Karty členů z mého účtu (já a děti) včetně odkazu na fotku. Databáze vrací jen moje členy. */
@@ -20,7 +22,7 @@ export async function getMyCards(memberIds: string[]): Promise<Card[]> {
   const sb = await serverClient();
   const { data } = await sb
     .from("members")
-    .select("id,first_name,last_name,birth_year,category,kyu,membership,joined_on,photo_updated_at,bases(name)")
+    .select("id,first_name,last_name,birth_year,category,kyu,membership,joined_on,photo_updated_at,weight_kg,weight_updated_at,bases(name)")
     .in("id", memberIds)
     .order("first_name");
   const rows = data ?? [];
@@ -42,5 +44,7 @@ export async function getMyCards(memberIds: string[]): Promise<Card[]> {
     membership: MEMBERSHIP_LABEL[r.membership as Membership] ?? "–",
     joinedOn: r.joined_on ?? null,
     photoUrl: url.get(`${r.id}.webp`) ?? null,
+    weightKg: r.weight_kg === null ? null : Number(r.weight_kg),
+    weightUpdatedOn: r.weight_updated_at ? r.weight_updated_at.slice(0, 10) : null,
   }));
 }

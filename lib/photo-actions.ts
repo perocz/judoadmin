@@ -35,3 +35,14 @@ export async function removeMemberPhoto(memberId: string): Promise<PhotoResult> 
   revalidatePath("/clenove");
   return { ok: true };
 }
+
+/** Váha člena: smí měnit jen člen sám nebo zákonný zástupce. Prázdná hodnota váhu smaže. */
+export async function setMemberWeight(memberId: string, kg: number | null): Promise<PhotoResult> {
+  if (!UUID.test(memberId)) return { ok: false, error: "Neplatný člen." };
+  if (kg !== null && (!Number.isFinite(kg) || kg < 10 || kg > 200)) return { ok: false, error: "Váha musí být mezi 10 a 200 kg." };
+  const sb = await serverClient();
+  const { error } = await sb.rpc("set_member_weight", { p_member: memberId, p_kg: kg === null ? null : Math.round(kg * 10) / 10 });
+  if (error) return { ok: false, error: error.code === "42501" ? "Nemáte oprávnění měnit tuto váhu." : "Uložení váhy se nepodařilo." };
+  revalidatePath("/clenove");
+  return { ok: true };
+}

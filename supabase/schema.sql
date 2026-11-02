@@ -351,3 +351,5 @@ create table attendance (
 -- private.contact_pending, funkce activation_begin / activation_confirm / my_accounts / reset_set_password / password_changed.
 -- „Schránka“ = uživatel Supabase Auth bez profilu, vzniká při odeslání odkazu (signInWithOtp) a dokazuje vlastnictví e-mailu.
 -- guard_profile_update() brání obejít ověření (contact_email a shození must_change_password jen přes tyto funkce).
+
+-- Migrace member_weight: members.weight_kg / weight_updated_at, public.set_member_weight(member, kg) (jen člen a zákonný zástupce).
