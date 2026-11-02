@@ -27,6 +27,7 @@ export default function AccountManager({
   const [error, setError] = useState("");
   const [created, setCreated] = useState("");
   const [resetting, setResetting] = useState("");
+  const [confirming, setConfirming] = useState("");
   const [reset, setReset] = useState<{ id: string; username: string; password: string } | null>(null);
 
   const [first, setFirst] = useState("");
@@ -69,7 +70,8 @@ export default function AccountManager({
   };
 
   const resetPw = async (acc: AccountRow) => {
-    if (!window.confirm(`Obnovit heslo účtu ${acc.username}? Účet se odhlásí a dostane dočasné heslo.`)) return;
+    // Potvrzení je přímo na stránce: nativní okna (confirm) jsou ve vestavěném prohlížeči vypnutá a vracejí "ne".
+    setConfirming("");
     setError("");
     setReset(null);
     setResetting(acc.id);
@@ -199,16 +201,31 @@ export default function AccountManager({
                 <p>
                   {a.fullName} <span className="font-mono text-sm text-muted">{a.username}</span>{" "}
                   <span className="text-sm text-muted">· {a.roles.map((r) => KIND_LABEL[r as Kind] ?? r).join(", ")}</span>
-                  {a.id !== selfId && (
-                    <button
-                      type="button"
-                      disabled={resetting === a.id}
-                      onClick={() => resetPw(a)}
-                      className="ml-3 border border-line px-2 py-0.5 text-sm text-muted hover:border-accent hover:text-accent disabled:opacity-50"
-                    >
-                      {resetting === a.id ? "Obnovuji…" : "Obnovit heslo"}
-                    </button>
-                  )}
+                  {a.id !== selfId &&
+                    (confirming === a.id ? (
+                      <span className="ml-3 inline-flex flex-wrap items-center gap-2 text-sm">
+                        <span>Obnovit heslo? Účet se odhlásí a dostane dočasné heslo.</span>
+                        <button type="button" onClick={() => resetPw(a)} className="border border-accent px-2 py-0.5 text-accent">
+                          Ano, obnovit
+                        </button>
+                        <button type="button" onClick={() => setConfirming("")} className="border border-line px-2 py-0.5 text-muted hover:text-fg">
+                          Zrušit
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={resetting === a.id}
+                        onClick={() => {
+                          setReset(null);
+                          setError("");
+                          setConfirming(a.id);
+                        }}
+                        className="ml-3 border border-line px-2 py-0.5 text-sm text-muted hover:border-accent hover:text-accent disabled:opacity-50"
+                      >
+                        {resetting === a.id ? "Obnovuji…" : "Obnovit heslo"}
+                      </button>
+                    ))}
                 </p>
                 {reset?.id === a.id && (
                   <p className="text-sm" role="status">
