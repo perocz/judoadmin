@@ -11,6 +11,8 @@ export type Session = {
   username: string | null;
   fullName: string;
   mustChangePassword: boolean;
+  /** Má ověřený kontaktní e-mail (nutný pro obnovu hesla). */
+  hasContactEmail: boolean;
   roles: Role[];
   /** Má roli trenéra (i bez základny = trenér bez příznaku). */
   isTrainer: boolean;
@@ -28,7 +30,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
   if (!userId) return null;
   const user = { id: userId };
   const [profile, roles] = await Promise.all([
-    sb.from("profiles").select("full_name,username,must_change_password").eq("id", user.id).maybeSingle(),
+    sb.from("profiles").select("full_name,username,must_change_password,contact_email").eq("id", user.id).maybeSingle(),
     sb.from("user_roles").select("role,base_id").eq("profile_id", user.id),
   ]);
   if (!profile.data) return null;
@@ -38,6 +40,7 @@ export const getSession = cache(async (): Promise<Session | null> => {
     username: profile.data.username,
     fullName: profile.data.full_name,
     mustChangePassword: profile.data.must_change_password,
+    hasContactEmail: !!profile.data.contact_email,
     roles: [...new Set(rows.map((r) => r.role as Role))],
     isTrainer: rows.some((r) => r.role === "trainer"),
     trainerBaseIds: rows.filter((r) => r.role === "trainer" && r.base_id).map((r) => r.base_id as string),

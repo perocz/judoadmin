@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import type { FormState } from "@/lib/auth-actions";
 
-type Field = { name: string; label: string; type: string; autoComplete: string };
+type Field = { name: string; label: string; type: string; autoComplete: string; defaultValue?: string };
 
 export default function AuthForm({
   action,
@@ -23,6 +23,7 @@ export default function AuthForm({
           <input
             className="field"
             name={f.name}
+            defaultValue={f.defaultValue}
             type={f.type}
             autoComplete={f.autoComplete}
             autoCapitalize="none"
@@ -32,6 +33,7 @@ export default function AuthForm({
           />
         </label>
       ))}
+      {state.info && <p role="status" className="text-sm">{state.info}</p>}
       {state.error && (
         <p role="alert" className="text-sm text-accent">
           {state.error}

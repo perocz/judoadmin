@@ -346,3 +346,8 @@ create table attendance (
 -- Migrace member_photos, member_photos_guard: members.photo_updated_at, privátní bucket member-photos
 -- (soubor <member_id>.webp, čtení kdo vidí člena, zápis jen člen/zákonný zástupce),
 -- public.set_member_photo(member, has) a výjimka pro photo_updated_at v guard_member_update().
+
+-- Migrace contact_email_activation, activation_begin_without_flag: profiles.contact_email (jen přes ověření odkazem),
+-- private.contact_pending, funkce activation_begin / activation_confirm / my_accounts / reset_set_password / password_changed.
+-- „Schránka“ = uživatel Supabase Auth bez profilu, vzniká při odeslání odkazu (signInWithOtp) a dokazuje vlastnictví e-mailu.
+-- guard_profile_update() brání obejít ověření (contact_email a shození must_change_password jen přes tyto funkce).
