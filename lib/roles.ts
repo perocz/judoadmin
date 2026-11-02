@@ -27,8 +27,8 @@ export function menuFor(role: Role): MenuItem[] {
     case "trainer":
       return [home, { href: "/clenove", label: "Moje základna" }, { href: "/dochazka", label: "Docházka" }, { href: "/trener-treninky", label: "Tréninky" }, { href: "/ucty", label: "Účty rodičů" }];
     case "parent":
-      return [home, { href: "/clenove", label: "Moje děti" }, { href: "/moje-treninky", label: "Přihlášky na tréninky" }];
+      return [home, { href: "/clenove", label: "Moje děti" }, { href: "/moje-treninky", label: "Tréninky" }];
     case "member":
-      return [home, { href: "/clenove", label: "Můj profil" }, { href: "/moje-treninky", label: "Přihlášky na tréninky" }];
+      return [home, { href: "/clenove", label: "Můj profil" }, { href: "/moje-treninky", label: "Tréninky" }];
   }
 }

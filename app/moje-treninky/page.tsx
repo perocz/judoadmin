@@ -6,12 +6,12 @@ import { getBases } from "@/lib/data";
 import { requireSession } from "@/lib/session";
 import { fmtDay, fmtTime, getMyMembers, getMyRegs, getTrainings } from "@/lib/trainings";
 
-export const metadata: Metadata = { title: "Přihlášky na tréninky" };
+export const metadata: Metadata = { title: "Tréninky" };
 
 export default function Page({ searchParams }: PageProps<"/moje-treninky">) {
   return (
     <div>
-      <h1 className="text-2xl font-semibold">Přihlášky na tréninky</h1>
+      <h1 className="text-2xl font-semibold">Tréninky</h1>
       <p className="mt-1 text-muted">
         Na tréninky své základny jsou členové přihlášeni automaticky, stačí je případně omluvit (i zpětně). Na jinou základnu se lze přihlásit jako host do hodiny před tréninkem.
       </p>
