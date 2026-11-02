@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
-import { ROLE_LABEL } from "@/lib/roles";
 import { logout } from "@/lib/auth-actions";
 
 /** Menu podle rolí přihlášeného uživatele. Čte relaci, proto se v layoutu vkládá za Suspense. */
@@ -24,9 +23,6 @@ export default async function UserMenu() {
           </Link>
         </li>
       )}
-      <li className="text-muted" title={session.roles.map((r) => ROLE_LABEL[r]).join(", ")}>
-        {session.fullName}
-      </li>
       <li>
         <form action={logout}>
           <button type="submit" className="text-muted hover:text-accent">

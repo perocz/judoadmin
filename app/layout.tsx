@@ -20,13 +20,6 @@ export const viewport: Viewport = {
   ],
 };
 
-const nav = [
-  { href: "/", label: "Přehled" },
-  { href: "/akce", label: "Akce" },
-  { href: "/treninky", label: "Tréninky" },
-  { href: "/zebricek", label: "Žebříček" },
-];
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="cs">
@@ -44,13 +37,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </Link>
             <nav aria-label="Hlavní navigace">
               <ul className="flex flex-wrap gap-x-5 gap-y-1 text-[0.9375rem]">
-                {nav.map((n) => (
-                  <li key={n.href}>
-                    <Link href={n.href} className="no-underline hover:underline">
-                      {n.label}
-                    </Link>
-                  </li>
-                ))}
                 {isDemo ? (
                   <li>
                     <Link href="/clenove" className="no-underline hover:underline">
