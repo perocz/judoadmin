@@ -56,5 +56,5 @@ async function Content() {
       children: (kids.get(p.id) ?? []).map((id) => byId.get(id)).filter((m): m is NonNullable<typeof m> => !!m),
     }));
   const myBases = isAdmin ? bases : bases.filter((b) => session.trainerBaseIds.includes(b.id));
-  return <AccountManager members={members} bases={myBases} accounts={accounts} isAdmin={isAdmin} />;
+  return <AccountManager members={members} bases={myBases} accounts={accounts} isAdmin={isAdmin} selfId={session.userId} />;
 }

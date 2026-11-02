@@ -47,6 +47,24 @@ export async function createAccount(input: {
   return { ok: false, error: "Nepodařilo se najít volné uživatelské jméno." };
 }
 
+export type ResetResult = { ok: boolean; error?: string; password?: string };
+
+/**
+ * Obnoví heslo účtu: databáze nastaví náhodné dočasné heslo, odhlásí účet a vynutí změnu při příštím přihlášení.
+ * Smí správce (kdokoli) a trenér (rodiče a členové jeho základny). Heslo se vrací jen tomu, kdo obnovu provedl.
+ */
+export async function resetPassword(profileId: string): Promise<ResetResult> {
+  const session = await getSession();
+  if (!session) return { ok: false, error: "Nejste přihlášen." };
+  if (profileId === session.userId) return { ok: false, error: "Vlastní heslo změň v nabídce uživatele." };
+  const sb = await serverClient();
+  const { data, error } = await sb.rpc("reset_password", { p_profile: profileId });
+  if (error) {
+    return { ok: false, error: /smí|Smíte|Nemáte|neexistuje|Nejste/.test(error.message) ? error.message : "Obnovení hesla se nepodařilo." };
+  }
+  return { ok: true, password: data as string };
+}
+
 export async function linkChild(profileId: string, memberId: string): Promise<Result> {
   const sb = await serverClient();
   const { error } = await sb.from("guardians").insert({ profile_id: profileId, member_id: memberId });

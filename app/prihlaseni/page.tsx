@@ -17,6 +17,9 @@ export default function LoginPage() {
           { name: "password", label: "Heslo", type: "password", autoComplete: "current-password" },
         ]}
       />
+      <p className="mt-6 max-w-prose text-sm text-muted">
+        Zapomenuté heslo: požádej trenéra své základny nebo správce, aby ti heslo obnovil. Dostaneš dočasné heslo a při přihlášení si nastavíš nové.
+      </p>
     </div>
   );
 }

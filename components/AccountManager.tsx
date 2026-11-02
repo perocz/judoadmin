@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createAccount, linkChild, unlinkChild } from "@/lib/account-actions";
+import { createAccount, linkChild, resetPassword, unlinkChild } from "@/lib/account-actions";
 import MemberPicker, { type PickMember } from "./MemberPicker";
 
 export type AccountRow = { id: string; username: string; fullName: string; roles: string[]; children: PickMember[] };
@@ -14,15 +14,20 @@ export default function AccountManager({
   bases,
   accounts: initial,
   isAdmin,
+  selfId,
 }: {
   members: PickMember[];
   bases: { id: string; name: string }[];
   accounts: AccountRow[];
   isAdmin: boolean;
+  /** Vlastní účet: heslo si uživatel mění sám v nabídce, ne tlačítkem Obnovit heslo. */
+  selfId: string;
 }) {
   const [accounts, setAccounts] = useState(initial);
   const [error, setError] = useState("");
   const [created, setCreated] = useState("");
+  const [resetting, setResetting] = useState("");
+  const [reset, setReset] = useState<{ id: string; username: string; password: string } | null>(null);
 
   const [first, setFirst] = useState("");
   const [last, setLast] = useState("");
@@ -61,6 +66,17 @@ export default function AccountManager({
     setFirst("");
     setLast("");
     setChildren([]);
+  };
+
+  const resetPw = async (acc: AccountRow) => {
+    if (!window.confirm(`Obnovit heslo účtu ${acc.username}? Účet se odhlásí a dostane dočasné heslo.`)) return;
+    setError("");
+    setReset(null);
+    setResetting(acc.id);
+    const r = await resetPassword(acc.id);
+    setResetting("");
+    if (!r.ok || !r.password) return setError(r.error ?? "Obnovení hesla se nepodařilo.");
+    setReset({ id: acc.id, username: acc.username, password: r.password });
   };
 
   const add = async (acc: AccountRow, m: PickMember) => {
@@ -183,7 +199,23 @@ export default function AccountManager({
                 <p>
                   {a.fullName} <span className="font-mono text-sm text-muted">{a.username}</span>{" "}
                   <span className="text-sm text-muted">· {a.roles.map((r) => KIND_LABEL[r as Kind] ?? r).join(", ")}</span>
+                  {a.id !== selfId && (
+                    <button
+                      type="button"
+                      disabled={resetting === a.id}
+                      onClick={() => resetPw(a)}
+                      className="ml-3 border border-line px-2 py-0.5 text-sm text-muted hover:border-accent hover:text-accent disabled:opacity-50"
+                    >
+                      {resetting === a.id ? "Obnovuji…" : "Obnovit heslo"}
+                    </button>
+                  )}
                 </p>
+                {reset?.id === a.id && (
+                  <p className="text-sm" role="status">
+                    Dočasné heslo pro <span className="font-mono">{reset.username}</span>: <span className="font-mono">{reset.password}</span>
+                    <span className="text-muted"> · zobrazí se jen teď, uživatel si ho při přihlášení změní.</span>
+                  </p>
+                )}
                 {a.roles.includes("parent") && (
                   <div className="space-y-2">
                     {a.children.length > 0 && (

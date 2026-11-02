@@ -333,3 +333,7 @@ create table attendance (
 -- Přítomni jsou automaticky všichni členové základny bez omluvy a hosté; trenér zapisuje jen absenci.
 
 -- Stav tréninku je jen planned | cancelled. Hodnota cancelled_replacement a sloupec replacement_base_ids zůstávají v databázi nepoužité.
+
+-- Obnova hesla: public.reset_password(profile) vrací náhodné dočasné heslo (10 znaků), nastaví must_change_password
+-- a odhlásí účet. Smí správce (kdokoli) a trenér (rodiče a členové jeho základny, nikdy trenér, moderátor ani správce).
+-- Právo spouštění má jen přihlášený. Migrace reset_password_function a reset_password_grant.
